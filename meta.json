@@ -1,0 +1,21 @@
+{
+   "licenseType": "PC",
+   "creatorName": "everlaster",
+   "packageName": "PackageLicenseFilter",
+   "standardReferenceVersionOption": "Latest",
+   "scriptReferenceVersionOption": "Exact",
+   "description": "v0.0.0. ",
+   "credits": "",
+   "instructions": "",
+   "promotionalLink": "",
+   "programVersion": "1.22.0.1",
+   "contentList": [
+      "Custom/Scripts/everlaster/PackageLicenseFilter/PackageLicenseFilter.cslist",
+      "Custom/Scripts/everlaster/PackageLicenseFilter/src"
+   ],
+   "dependencies": {
+   },
+   "customOptions": {
+      "preloadMorphs": "false"
+   }
+}
