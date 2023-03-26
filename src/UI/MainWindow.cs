@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 sealed class MainWindow : WindowBase
@@ -11,8 +10,6 @@ sealed class MainWindow : WindowBase
     protected override void OnBuild()
     {
         BuildLeftSide();
-        BuildRightSide();
-
         AddElement(
             () =>
             {
@@ -21,7 +18,7 @@ sealed class MainWindow : WindowBase
                 var rectTransform = fieldTransform.GetComponent<RectTransform>();
                 rectTransform.pivot = new Vector2(0, 0);
                 rectTransform.anchoredPosition = new Vector2(10, -1220);
-                rectTransform.sizeDelta = new Vector2(-20, 560);
+                rectTransform.sizeDelta = new Vector2(-20, 600);
                 var textField = fieldTransform.GetComponent<UIDynamicTextField>();
                 textField.text = PackageLicenseFilter.script.filterInfoJss.val;
                 PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
@@ -29,17 +26,59 @@ sealed class MainWindow : WindowBase
                 return textField;
             }
         );
+        BuildRightSide();
     }
 
     void BuildLeftSide(bool rightSide = false)
     {
-        foreach(var jsb in PackageLicenseFilter.script.licenseTypeEnabledJsons)
+        var list = PackageLicenseFilter.script.licenseTypeEnabledJsons;
+        int leftCount = 0;
+        int rightCount = 0;
+        for(int i = 0; i < list.Count; i++)
         {
-            AddElement(
-                () => script.CreateToggle(jsb, rightSide)
-            );
+            var jsb = list[i];
+            if(i < list.Count / 2)
+            {
+                AddLicenseToggle(jsb, 0, -65 * leftCount);
+                leftCount++;
+            }
+            else
+            {
+                AddLicenseToggle(jsb, 270, -65 * rightCount);
+                rightCount++;
+            }
         }
 
+        AddSpacer(300, rightSide);
+
+        AddHeaderTextField("CC auto-selection", rightSide);
+        AddElement(
+            () =>
+            {
+                // TODO
+                var button = script.CreateButton("Allows commercial use", rightSide);
+                button.height = 60;
+                return button;
+            }
+        );
+        AddElement(
+            () =>
+            {
+                // TODO
+                var button = script.CreateButton("Allows modification", rightSide);
+                button.height = 60;
+                return button;
+            }
+        );
+        AddElement(
+            () =>
+            {
+                // TODO
+                var button = script.CreateButton("All", rightSide);
+                button.height = 60;
+                return button;
+            }
+        );
     }
 
     void BuildRightSide(bool rightSide = true)
@@ -48,10 +87,15 @@ sealed class MainWindow : WindowBase
             () =>
             {
                 var action = PackageLicenseFilter.script.applyFilterAction;
-                var button = script.CreateButton(action.name, rightSide);
+                var button = script.CreateButton(action.name.Bold(), rightSide);
                 action.RegisterButton(button);
                 return button;
             }
+        );
+
+        // TODO
+        AddElement(
+            () => script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide)
         );
 
         AddElement(
@@ -67,11 +111,6 @@ sealed class MainWindow : WindowBase
             }
         );
 
-        // TODO select CC
-        // TODO select permits commercial use
-        // TODO select permits modification
-        // TODO select all
-
         /* Version text field */
         {
             var versionJss = new JSONStorableString("version", "");
@@ -80,4 +119,20 @@ sealed class MainWindow : WindowBase
             PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
         }
     }
+
+    void AddLicenseToggle(JSONStorableBool jsb, float posX, float posY) => AddElement(
+        () =>
+        {
+            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+            var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
+            var rectTransform = toggleTransform.GetComponent<RectTransform>();
+            rectTransform.pivot = new Vector2(0, 0);
+            rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
+            rectTransform.sizeDelta = new Vector2(-820, 50);
+            var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
+            toggle.label = jsb.name;
+            PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
+            return toggle;
+        }
+    );
 }

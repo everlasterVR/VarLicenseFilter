@@ -39,10 +39,9 @@ sealed class PackageLicenseFilter : ScriptBase
             /* Used to store version in save JSON and communicate version to other plugin instances */
             this.NewJSONStorableString(Constant.VERSION, VERSION);
 
-            if(containingAtom.type != "SessionPluginManager")
+            if(containingAtom.type != "SessionPluginManager" && containingAtom.type != "CoreControl")
             {
-                string incorrectTargetStr = containingAtom.type == "CoreControl" ? "Scene Plugins" : $"atom {containingAtom.type}";
-                FailInitWithMessage($"Add to Session Plugins, not to {incorrectTargetStr}.");
+                FailInitWithMessage($"Add to Session Plugins or Scene Plugins.");
                 return;
             }
 
@@ -65,9 +64,6 @@ sealed class PackageLicenseFilter : ScriptBase
 
     readonly Dictionary<string, bool> _licenseTypesEnabled = new Dictionary<string, bool>()
     {
-        { "PC", true },
-        { "PC EA", true },
-        { "Questionable", true },
         { "FC", true },
         { "CC BY", true },
         { "CC BY-SA", true },
@@ -75,6 +71,9 @@ sealed class PackageLicenseFilter : ScriptBase
         { "CC BY-NC", true },
         { "CC BY-NC-SA", true },
         { "CC BY-NC-ND", true },
+        { "PC", true },
+        { "PC EA", true },
+        { "Questionable", true },
     };
     public List<JSONStorableBool> licenseTypeEnabledJsons { get; private set; }
 
