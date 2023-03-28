@@ -98,4 +98,46 @@ static partial class UIDynamicExtensions
             throw new ArgumentException($"UIDynamic {element.name} was null, or not an expected type");
         }
     }
+
+    public static void SetFocusedColor(this UIDynamic element, Color color)
+    {
+        if(!element)
+        {
+            return;
+        }
+
+        if(element is UIDynamicSlider)
+        {
+            var uiDynamicSlider = (UIDynamicSlider) element;
+            var colors = uiDynamicSlider.slider.colors;
+            colors.highlightedColor = color;
+            colors.pressedColor = color;
+            uiDynamicSlider.slider.colors = colors;
+        }
+        else if(element is UIDynamicToggle)
+        {
+            var uiDynamicToggle = (UIDynamicToggle) element;
+            var colors = uiDynamicToggle.toggle.colors;
+            colors.highlightedColor = color;
+            colors.pressedColor = color;
+            uiDynamicToggle.toggle.colors = colors;
+        }
+        else if(element is UIDynamicButton)
+        {
+            var uiDynamicButton = (UIDynamicButton) element;
+            var colors = uiDynamicButton.button.colors;
+            colors.highlightedColor = color;
+            colors.pressedColor = color;
+            uiDynamicButton.button.colors = colors;
+        }
+        else if(element is UIDynamicPopup)
+        {
+            throw new ArgumentException($"{nameof(UIDynamicPopup)} is not supported");
+        }
+        else
+        {
+            throw new ArgumentException($"UIDynamic {element.name} was null, or not an expected type");
+        }
+
+    }
 }

@@ -12,17 +12,20 @@ sealed class VarPackage
 
     readonly string _disabledFilePath;
 
-    public VarPackage(string path, string name, string license, bool status)
+    public VarPackage(string path, string name, string license, bool status, string addonPackagesDirPath)
     {
         this.path = path;
         this.name = name;
         this.license = license;
         this.status = status;
         originalStatus = status;
-        _disabledFilePath = Regex.Replace(path, "^AddonPackages/", "Custom/PluginData/AddonPackages/") + ".disabled";
+        _disabledFilePath = Regex.Replace(path, "^AddonPackages/", addonPackagesDirPath) + FileUtils.DISABLED_EXT;
     }
 
-    public bool IsDirty() => status != originalStatus;
+    public bool IsDirty()
+    {
+        return status != originalStatus;
+    }
 
     /* See VarPackage Enabled method*/
     public void SetStatus(bool value)

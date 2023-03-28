@@ -22,7 +22,10 @@ sealed class PackageLicenseFilter : ScriptBase
 
 #region *** Init ***
 
-    public static bool IsInitialized() => script.initialized == true;
+    public static bool IsInitialized()
+    {
+        return script.initialized == true;
+    }
 
     public override void Init()
     {
@@ -64,7 +67,6 @@ sealed class PackageLicenseFilter : ScriptBase
     }
 
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
-
     readonly Dictionary<string, bool> _licenseTypesEnabled = new Dictionary<string, bool>()
     {
         { "FC", true },
@@ -78,13 +80,17 @@ sealed class PackageLicenseFilter : ScriptBase
         { "PC EA", true },
         { "Questionable", true },
     };
-    public List<JSONStorableBool> licenseTypeEnabledJsons { get; private set; }
 
+    public List<string> addonPackagesDirPaths { get; private set; }
+    public JSONStorableString addonPackagesLocationJss { get; private set; }
+    public JSONStorableAction saveAndContinueAction { get; private set; }
+    public Dictionary<string, JSONStorableBool> licenseTypeEnabledJsons { get; private set; }
     public JSONStorableString restartVamInfoJss { get; private set; }
     public JSONStorableString filterInfoJss { get; private set; }
     public JSONStorableAction applyFilterAction { get; private set; }
 
     IWindow _mainWindow;
+    IWindow _setupWindow;
 
     IEnumerator InitCo()
     {
@@ -101,11 +107,21 @@ sealed class PackageLicenseFilter : ScriptBase
 
         try
         {
-            InitStorables();
-            InitPackages();
+            FindAddonPackagesDirPaths();
+            SetupStorables();
+            ReadUserPreferencesFromFile();
 
             _mainWindow = new MainWindow();
-            _mainWindow.Rebuild();
+            _setupWindow = new SetupWindow();
+            if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
+            {
+                _setupWindow.Rebuild();
+            }
+            else
+            {
+                _mainWindow.Rebuild();
+                InitPackages();
+            }
 
             initialized = true;
         }
@@ -115,21 +131,57 @@ sealed class PackageLicenseFilter : ScriptBase
         }
     }
 
-    void InitStorables()
+    void SetupStorables()
     {
-        licenseTypeEnabledJsons = _licenseTypesEnabled.Keys.ToList()
-            .Select(
-                licenseType =>
-                {
-                    var jsb = this.NewJSONStorableBool(licenseType, true);
-                    jsb.setCallbackFunction = value => _licenseTypesEnabled[licenseType] = value;
-                    return jsb;
-                }
-            )
-            .ToList();
-        restartVamInfoJss = new JSONStorableString("Restart VAM Info", "");
-        filterInfoJss = new JSONStorableString("Filter Info", "");
-        applyFilterAction = new JSONStorableAction("Apply Filter", ApplyFilter);
+        addonPackagesLocationJss = new JSONStorableString("AddonPackages location", "");
+        saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
+        SetupLicenseTypeBools();
+        restartVamInfoJss = new JSONStorableString("Restart VAM info", "");
+        filterInfoJss = new JSONStorableString("Filter info", "");
+        applyFilterAction = new JSONStorableAction("Apply filter", ApplyFilter);
+    }
+
+    void FindAddonPackagesDirPaths()
+    {
+        addonPackagesDirPaths = new List<string>();
+        addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Custom\PluginData", "AddonPackages"));
+        addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Saves\PluginData", "AddonPackages"));
+        ;
+        // (string _) => ((SetupWindow) _setupWindow).Refresh()
+    }
+
+    void SetupLicenseTypeBools()
+    {
+        licenseTypeEnabledJsons = _licenseTypesEnabled.Keys.ToDictionary(
+            licenseType => licenseType,
+            licenseType =>
+            {
+                var jsb = this.NewJSONStorableBool(licenseType, true);
+                jsb.setCallbackFunction = value => _licenseTypesEnabled[licenseType] = value;
+                return jsb;
+            }
+        );
+    }
+
+    void ReadUserPreferencesFromFile()
+    {
+        var prefsJson = FileUtils.ReadPrefsJSON();
+        if(prefsJson != null && prefsJson.HasKey(addonPackagesLocationJss.name))
+        {
+            // TODO validate
+            JSONUtils.SetStorableValueFromJson(prefsJson, addonPackagesLocationJss);
+        }
+        else
+        {
+            SyncPreferencesFile();
+        }
+    }
+
+    void SyncPreferencesFile()
+    {
+        var jc = FileUtils.ReadPrefsJSON() ?? new JSONClass();
+        jc[addonPackagesLocationJss.name] = addonPackagesLocationJss.val;
+        FileUtils.WritePrefsJSON(jc);
     }
 
     void InitPackages()
@@ -148,7 +200,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
-            var metaJson = FileUtils.ReadJSON(metaJsonPath);
+            var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
             if(!metaJson.HasKey("licenseType"))
             {
                 errorPackages.AppendLine($"{fileName}: Missing 'licenseType' field in meta.json");
@@ -163,7 +215,7 @@ sealed class PackageLicenseFilter : ScriptBase
             }
 
             bool packageEnabled = _licenseTypesEnabled[license];
-            _varPackages.Add(new VarPackage(path, fileName, license, packageEnabled));
+            _varPackages.Add(new VarPackage(path, fileName, license, packageEnabled, addonPackagesLocationJss.val));
             if(packageEnabled)
             {
                 enabledPackagesCount++;
@@ -188,6 +240,14 @@ sealed class PackageLicenseFilter : ScriptBase
         filterInfoJss.val = infoText.ToString();
     }
 
+    void SaveAndContinue()
+    {
+        SyncPreferencesFile();
+        InitPackages();
+        _setupWindow.Clear();
+        _mainWindow.Rebuild();
+    }
+
     bool _packagesDirty;
 
     void ApplyFilter()
@@ -208,12 +268,12 @@ sealed class PackageLicenseFilter : ScriptBase
                 if(packageEnabled)
                 {
                     enabledPackagesCount++;
-                    enabledPackagesList.AppendLine($"{package.name}: {license}");
+                    enabledPackagesList.AppendLine($"{license.Color(Color.green)}  {package.name}");
                 }
                 else
                 {
                     disabledPackagesCount++;
-                    disabledPackagesList.AppendLine($"{package.name}: {license}");
+                    disabledPackagesList.AppendLine($"{license.Color(Color.red)}  {package.name}");
                 }
             }
 
@@ -245,7 +305,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
 
         _packagesDirty = _varPackages.Any(package => package.IsDirty());
-        restartVamInfoJss.val = _packagesDirty ? "Restart VAM to reload packages!".Bold().Color(new Color(0.75f, 0, 0)) : "";
+        restartVamInfoJss.val = _packagesDirty ? "Restart VAM to reload packages".Bold().Color(new Color(0.75f, 0, 0)) : "";
     }
 
 #endregion

@@ -121,7 +121,7 @@ class WindowBase : IWindow
             () =>
             {
                 var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
-                textField.UItext.alignment = TextAnchor.LowerCenter;
+                textField.UItext.alignment = TextAnchor.LowerLeft;
                 return textField;
             }
         );
@@ -149,7 +149,7 @@ class WindowBase : IWindow
         var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
         var rectTransform = fieldTransform.GetComponent<RectTransform>();
         rectTransform.pivot = new Vector2(0, 0);
-        rectTransform.anchoredPosition = new Vector2(550, -Constant.UI_MAX_HEIGHT - 27);
+        rectTransform.anchoredPosition = new Vector2(530, -Constant.UI_MAX_HEIGHT - 27);
         rectTransform.sizeDelta = new Vector2(-556, 42);
         jss.val = $"v{PackageLicenseFilter.VERSION}";
         var textField = fieldTransform.GetComponent<UIDynamicTextField>();

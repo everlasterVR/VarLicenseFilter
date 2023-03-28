@@ -7,6 +7,41 @@ using UnityEngine;
 
 static class FileUtils
 {
+    const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
+    public const string PREFS_FILE = "preferences.json";
+    public const string DISABLED_EXT = ".disabled";
+
+    public static IEnumerable<string> FindDirPaths(string rootPath, string dirName)
+    {
+        var result = new List<string>();
+        var searchDirs = new Stack<string>();
+        searchDirs.Push(FileManagerSecure.NormalizePath(rootPath));
+
+        while(searchDirs.Count > 0)
+        {
+            string searchDir = searchDirs.Pop();
+            foreach(string dir in FileManagerSecure.GetDirectories(searchDir))
+            {
+                string normalizedDir = FileManagerSecure.NormalizePath(dir);
+                if(normalizedDir.Contains(".var:"))
+                {
+                    continue;
+                }
+
+                if(Utils.BaseName(normalizedDir) == dirName)
+                {
+                    result.Add(normalizedDir + "/");
+                }
+                else
+                {
+                    searchDirs.Push(normalizedDir);
+                }
+            }
+        }
+
+        return result;
+    }
+
     public static IEnumerable<string> FindVarFilePaths()
     {
         return FindFilePaths("AddonPackages", "*.var");
@@ -41,22 +76,47 @@ static class FileUtils
         return result;
     }
 
+    public static JSONClass ReadPrefsJSON()
+    {
+        EnsureDataDirExists();
+        return ReadJSON($"{DATA_DIR}/{PREFS_FILE}");
+    }
+
+    public static void WritePrefsJSON(JSONClass jc, UserActionCallback confirmCallback = null)
+    {
+        EnsureDataDirExists();
+        WriteJSON(jc, $"{DATA_DIR}/{PREFS_FILE}", confirmCallback);
+    }
+
     public static JSONClass ReadJSON(string path)
     {
+        JSONClass jc = null;
         try
         {
-            return SuperController.singleton.LoadJSON(path).AsObject;
+            if(FileManagerSecure.FileExists(path))
+            {
+                jc = JSON.Parse(FileManagerSecure.ReadAllText(path)).AsObject;
+            }
         }
         catch(Exception e)
         {
             Debug.Log($"{nameof(FileUtils)}.{nameof(ReadJSON)}: {e}");
-            return new JSONClass();
         }
+
+        return jc;
     }
 
-    public static void WriteJSON(JSONClass jc, string path)
+    public static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null)
     {
-        FileManagerSecure.WriteAllText(path, jc.ToString(""));
+        FileManagerSecure.WriteAllText(path, jc.ToString(""), confirmCallback, null, null);
+    }
+
+    static void EnsureDataDirExists()
+    {
+        if(!FileManagerSecure.DirectoryExists(DATA_DIR))
+        {
+            FileManagerSecure.CreateDirectory(DATA_DIR);
+        }
     }
 
     /* MVR.FileManagement FileManager */

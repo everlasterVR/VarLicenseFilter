@@ -90,12 +90,14 @@
     <Compile Include="src\Common\Static\Constant.cs" />
     <Compile Include="src\Common\Utils\Calc.cs" />
     <Compile Include="src\Common\Utils\FileUtils.cs" />
+    <Compile Include="src\Common\Utils\JSONUtils.cs" />
     <Compile Include="src\Common\Utils\Loggr.cs" />
     <Compile Include="src\Common\Utils\Utils.cs" />
     <Compile Include="src\PackageLicenseFilter.cs" />
     <Compile Include="src\Models\VarPackage.cs" />
     <Compile Include="src\UI\IWindow.cs" />
     <Compile Include="src\UI\MainWindow.cs" />
+    <Compile Include="src\UI\SetupWindow.cs" />
     <Compile Include="src\UI\WindowBase.cs" />
     <Compile Include="Vendor\vam-collider-editor\MVRScriptExtensions.cs" />
   </ItemGroup>
