@@ -4,8 +4,10 @@ using UnityEngine.UI;
 
 static class Utils
 {
-    public static string BaseName(string path) =>
-        path.Substring(path.LastIndexOf('/') + 1);
+    public static string BaseName(string path)
+    {
+        return path.Substring(path.LastIndexOf('/') + 1);
+    }
 
     public static Transform DestroyLayout(Transform transform)
     {
@@ -13,5 +15,8 @@ static class Utils
         return transform;
     }
 
-    public static Regex NewRegex(string regexStr) => new Regex(regexStr, RegexOptions.Compiled);
+    public static Regex NewRegex(string regexStr)
+    {
+        return new Regex(regexStr, RegexOptions.Compiled);
+    }
 }

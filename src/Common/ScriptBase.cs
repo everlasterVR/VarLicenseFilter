@@ -7,7 +7,11 @@ class ScriptBase : MVRScript
 {
     UnityEventsListener pluginUIEventsListener { get; set; }
 
-    public override bool ShouldIgnore() => true; // Prevent ScriptBase from showing up as a plugin in Plugins tab
+    // Prevent ScriptBase from showing up as a plugin in Plugins tab
+    public override bool ShouldIgnore()
+    {
+        return true;
+    }
 
 #region *** Init UI ***
 
@@ -23,10 +27,16 @@ class ScriptBase : MVRScript
     }
 
     // ReSharper disable once VirtualMemberNeverOverridden.Global
-    protected virtual Action OnUIEnabled() => null;
+    protected virtual Action OnUIEnabled()
+    {
+        return null;
+    }
 
     // ReSharper disable once VirtualMemberNeverOverridden.Global
-    protected virtual Action OnUIDisabled() => null;
+    protected virtual Action OnUIDisabled()
+    {
+        return null;
+    }
 
     IEnumerator InitUICo()
     {

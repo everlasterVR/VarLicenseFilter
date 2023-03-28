@@ -20,26 +20,40 @@ static partial class MVRScriptExtensions
         return idx >= 0 ? filename.Substring(0, idx) : null;
     }
 
-    public static Transform InstantiateTextField(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableTextFieldPrefab, parent, false);
+    public static Transform InstantiateTextField(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableTextFieldPrefab, parent, false);
+    }
 
-    public static Transform InstantiateButton(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableButtonPrefab, parent, false);
+    public static Transform InstantiateButton(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableButtonPrefab, parent, false);
+    }
 
-    public static Transform InstantiateSlider(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableSliderPrefab, parent, false);
+    public static Transform InstantiateSlider(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableSliderPrefab, parent, false);
+    }
 
-    public static Transform InstantiateToggle(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableTogglePrefab, parent, false);
+    public static Transform InstantiateToggle(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableTogglePrefab, parent, false);
+    }
 
-    public static Transform InstantiatePopup(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurablePopupPrefab, parent, false);
+    public static Transform InstantiatePopup(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurablePopupPrefab, parent, false);
+    }
 
-    public static Transform InstantiateColorPicker(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableColorPickerPrefab, parent, false);
+    public static Transform InstantiateColorPicker(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableColorPickerPrefab, parent, false);
+    }
 
-    public static Transform InstantiateSpacer(this MVRScript script, Transform parent = null) =>
-        UnityEngine.Object.Instantiate(script.manager.configurableSpacerPrefab, parent, false);
+    public static Transform InstantiateSpacer(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableSpacerPrefab, parent, false);
+    }
 
     public static JSONStorableString NewJSONStorableString(
         this MVRScript script,

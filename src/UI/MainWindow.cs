@@ -120,19 +120,22 @@ sealed class MainWindow : WindowBase
         }
     }
 
-    void AddLicenseToggle(JSONStorableBool jsb, float posX, float posY) => AddElement(
-        () =>
-        {
-            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
-            var rectTransform = toggleTransform.GetComponent<RectTransform>();
-            rectTransform.pivot = new Vector2(0, 0);
-            rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
-            rectTransform.sizeDelta = new Vector2(-820, 50);
-            var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
-            toggle.label = jsb.name;
-            PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
-            return toggle;
-        }
-    );
+    void AddLicenseToggle(JSONStorableBool jsb, float posX, float posY)
+    {
+        AddElement(
+            () =>
+            {
+                var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+                var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
+                var rectTransform = toggleTransform.GetComponent<RectTransform>();
+                rectTransform.pivot = new Vector2(0, 0);
+                rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
+                rectTransform.sizeDelta = new Vector2(-820, 50);
+                var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
+                toggle.label = jsb.name;
+                PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
+                return toggle;
+            }
+        );
+    }
 }

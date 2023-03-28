@@ -78,6 +78,8 @@ static partial class MVRScriptExtensions
         return popup;
     }
 
-    static Transform InstantiateButtonTransform(this MVRScript script) => Object
-        .Instantiate(script.manager.configurableButtonPrefab);
+    static Transform InstantiateButtonTransform(this MVRScript script)
+    {
+        return Object.Instantiate(script.manager.configurableButtonPrefab);
+    }
 }

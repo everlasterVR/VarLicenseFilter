@@ -8,12 +8,20 @@ class WindowBase : IWindow
 {
     protected readonly MVRScript script;
     readonly string _id;
-    public string GetId() => _id;
+
+    public string GetId()
+    {
+        return _id;
+    }
 
     readonly Dictionary<string, UIDynamic> _elements;
     protected readonly List<IWindow> nestedWindows;
 
-    public IWindow GetActiveNestedWindow() => activeNestedWindow;
+    public IWindow GetActiveNestedWindow()
+    {
+        return activeNestedWindow;
+    }
+
     protected IWindow activeNestedWindow;
 
     readonly UnityAction _onReturnToParent;
@@ -29,19 +37,28 @@ class WindowBase : IWindow
 
 #region *** Common Elements ***
 
-    protected void AddSpacer(int height, bool rightSide) =>
+    protected void AddSpacer(int height, bool rightSide)
+    {
         AddElement(() => script.NewSpacer(height, rightSide));
+    }
 
-    protected void AddElement(Func<UIDynamic> createElement) =>
+    protected void AddElement(Func<UIDynamic> createElement)
+    {
         AddElement(Guid.NewGuid().ToString(), createElement);
+    }
 
-    protected void AddElement(string key, Func<UIDynamic> createElement) =>
+    protected void AddElement(string key, Func<UIDynamic> createElement)
+    {
         _elements[key] = createElement();
+    }
 
-    protected void AddElement(UIDynamic element) =>
+    protected void AddElement(UIDynamic element)
+    {
         _elements[Guid.NewGuid().ToString()] = element;
+    }
 
-    void AddBackButton(bool rightSide, UnityAction onReturnToParent) =>
+    void AddBackButton(bool rightSide, UnityAction onReturnToParent)
+    {
         AddElement(
             () =>
             {
@@ -56,9 +73,12 @@ class WindowBase : IWindow
                 return button;
             }
         );
+    }
 
-    UIDynamicTextField CreateBasicTextField(string text, bool rightSide) =>
-        script.CreateTextField(new JSONStorableString("text", text), rightSide);
+    UIDynamicTextField CreateBasicTextField(string text, bool rightSide)
+    {
+        return script.CreateTextField(new JSONStorableString("text", text), rightSide);
+    }
 
     protected UIDynamicTextField CreateHeaderTextField(
         string text,
@@ -95,27 +115,33 @@ class WindowBase : IWindow
         layout.minHeight = height;
     }
 
-    protected void AddHeaderTextField(string text, bool rightSide) => AddElement(
-        () =>
-        {
-            var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
-            textField.UItext.alignment = TextAnchor.LowerCenter;
-            return textField;
-        }
-    );
+    protected void AddHeaderTextField(string text, bool rightSide)
+    {
+        AddElement(
+            () =>
+            {
+                var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
+                textField.UItext.alignment = TextAnchor.LowerCenter;
+                return textField;
+            }
+        );
+    }
 
-    protected void AddInfoTextField(string text, bool rightSide, int height = 100, int fontSize = 26) => AddElement(
-        () =>
-        {
-            var textField = CreateBasicTextField(text, rightSide);
-            textField.UItext.fontSize = fontSize;
-            textField.backgroundColor = Color.clear;
-            var layout = textField.GetComponent<LayoutElement>();
-            layout.preferredHeight = height;
-            layout.minHeight = height;
-            return textField;
-        }
-    );
+    protected void AddInfoTextField(string text, bool rightSide, int height = 100, int fontSize = 26)
+    {
+        AddElement(
+            () =>
+            {
+                var textField = CreateBasicTextField(text, rightSide);
+                textField.UItext.fontSize = fontSize;
+                textField.backgroundColor = Color.clear;
+                var layout = textField.GetComponent<LayoutElement>();
+                layout.preferredHeight = height;
+                layout.minHeight = height;
+                return textField;
+            }
+        );
+    }
 
     protected UIDynamicTextField CreateVersionTextField(JSONStorableString jss)
     {

@@ -15,11 +15,14 @@ sealed class PackageLicenseFilter : ScriptBase
     public static bool envIsDevelopment { get; private set; }
     public static PackageLicenseFilter script { get; private set; }
 
-    public override bool ShouldIgnore() => false;
+    public override bool ShouldIgnore()
+    {
+        return false;
+    }
 
 #region *** Init ***
 
-    public static bool isInitialized => script.initialized == true;
+    public static bool IsInitialized() => script.initialized == true;
 
     public override void Init()
     {
@@ -194,13 +197,13 @@ sealed class PackageLicenseFilter : ScriptBase
         var enabledPackagesList = new StringBuilder();
         var disabledPackagesList = new StringBuilder();
 
-        bool anyStatusChanged = false;
+        bool anyPackageDirty = false;
         foreach(var package in _varPackages)
         {
             string license = package.license;
             bool packageEnabled = _licenseTypesEnabled[license];
             package.SetStatus(packageEnabled);
-            if(package.dirty)
+            if(package.IsDirty())
             {
                 if(packageEnabled)
                 {
@@ -214,7 +217,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 }
             }
 
-            anyStatusChanged = anyStatusChanged || package.dirty;
+            anyPackageDirty = anyPackageDirty || package.IsDirty();
         }
 
         var infoText = new StringBuilder();
@@ -232,7 +235,7 @@ sealed class PackageLicenseFilter : ScriptBase
             infoText.AppendLine(disabledPackagesList.ToString());
         }
 
-        if(anyStatusChanged)
+        if(anyPackageDirty)
         {
             filterInfoJss.val = infoText.ToString();
         }
@@ -241,7 +244,7 @@ sealed class PackageLicenseFilter : ScriptBase
             filterInfoJss.val = "\n".Size(8) + "Nothing was changed.";
         }
 
-        _packagesDirty = _varPackages.Any(package => package.dirty);
+        _packagesDirty = _varPackages.Any(package => package.IsDirty());
         restartVamInfoJss.val = _packagesDirty ? "Restart VAM to reload packages!".Bold().Color(new Color(0.75f, 0, 0)) : "";
     }
 

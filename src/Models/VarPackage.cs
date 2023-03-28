@@ -22,7 +22,7 @@ sealed class VarPackage
         _disabledFilePath = Regex.Replace(path, "^AddonPackages/", "Custom/PluginData/AddonPackages/") + ".disabled";
     }
 
-    public bool dirty => status != originalStatus;
+    public bool IsDirty() => status != originalStatus;
 
     /* See VarPackage Enabled method*/
     public void SetStatus(bool value)

@@ -7,13 +7,16 @@ using UnityEngine;
 
 static class FileUtils
 {
-    public static IEnumerable<string> FindVarFilePaths() => FindFilePaths("AddonPackages", "*.var");
+    public static IEnumerable<string> FindVarFilePaths()
+    {
+        return FindFilePaths("AddonPackages", "*.var");
+    }
 
-    static IEnumerable<string> FindFilePaths(string path, string pattern)
+    static IEnumerable<string> FindFilePaths(string rootPath, string pattern)
     {
         var result = new List<string>();
         var searchDirs = new Stack<string>();
-        searchDirs.Push(FileManagerSecure.NormalizePath(path));
+        searchDirs.Push(FileManagerSecure.NormalizePath(rootPath));
 
         while(searchDirs.Count > 0)
         {
@@ -57,5 +60,8 @@ static class FileUtils
     }
 
     /* MVR.FileManagement FileManager */
-    public static string RemovePackageFromPath(string path) => Regex.Replace(Regex.Replace(path, ".*:/", string.Empty), ".*:\\\\", string.Empty);
+    public static string RemovePackageFromPath(string path)
+    {
+        return Regex.Replace(Regex.Replace(path, ".*:/", string.Empty), ".*:\\\\", string.Empty);
+    }
 }

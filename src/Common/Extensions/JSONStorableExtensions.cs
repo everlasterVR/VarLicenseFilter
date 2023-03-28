@@ -1,7 +1,9 @@
 ﻿static partial class JSONStorableExtensions
 {
-    public static bool IsEnabledNullSafe(this JSONStorable storable) =>
-        storable && storable.enabled;
+    public static bool IsEnabledNullSafe(this JSONStorable storable)
+    {
+        return storable && storable.enabled;
+    }
 
     public static void CallActionNullSafe(this JSONStorable storable, string actionName)
     {
