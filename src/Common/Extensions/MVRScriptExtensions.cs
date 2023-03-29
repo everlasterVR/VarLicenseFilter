@@ -62,8 +62,10 @@ static partial class MVRScriptExtensions
         bool shouldRegister = true
     )
     {
-        var storable = new JSONStorableString(paramName, startingValue);
-        storable.storeType = JSONStorableParam.StoreType.Full;
+        var storable = new JSONStorableString(paramName, startingValue)
+        {
+            storeType = JSONStorableParam.StoreType.Full,
+        };
         if(shouldRegister)
         {
             script.RegisterString(storable);
@@ -79,8 +81,10 @@ static partial class MVRScriptExtensions
         bool shouldRegister = true
     )
     {
-        var storable = new JSONStorableBool(paramName, startingValue);
-        storable.storeType = JSONStorableParam.StoreType.Full;
+        var storable = new JSONStorableBool(paramName, startingValue)
+        {
+            storeType = JSONStorableParam.StoreType.Full,
+        };
         if(shouldRegister)
         {
             script.RegisterBool(storable);
@@ -98,8 +102,10 @@ static partial class MVRScriptExtensions
         bool shouldRegister = true
     )
     {
-        var storable = new JSONStorableFloat(paramName, startingValue, minValue, maxValue);
-        storable.storeType = JSONStorableParam.StoreType.Full;
+        var storable = new JSONStorableFloat(paramName, startingValue, minValue, maxValue)
+        {
+            storeType = JSONStorableParam.StoreType.Full,
+        };
         if(shouldRegister)
         {
             script.RegisterFloat(storable);

@@ -47,7 +47,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
             if(containingAtom.type != "SessionPluginManager" && containingAtom.type != "CoreControl")
             {
-                FailInitWithMessage($"Add to Session Plugins or Scene Plugins.");
+                FailInitWithMessage("Add to Session Plugins or Scene Plugins.");
                 return;
             }
 
@@ -67,7 +67,7 @@ sealed class PackageLicenseFilter : ScriptBase
     }
 
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
-    readonly Dictionary<string, bool> _licenseTypesEnabled = new Dictionary<string, bool>()
+    readonly Dictionary<string, bool> _licenseTypesEnabled = new Dictionary<string, bool>
     {
         { "FC", true },
         { "CC BY", true },
@@ -146,7 +146,6 @@ sealed class PackageLicenseFilter : ScriptBase
         addonPackagesDirPaths = new List<string>();
         addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Custom\PluginData", "AddonPackages"));
         addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Saves\PluginData", "AddonPackages"));
-        ;
         // (string _) => ((SetupWindow) _setupWindow).Refresh()
     }
 

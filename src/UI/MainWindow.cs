@@ -10,23 +10,21 @@ sealed class MainWindow : WindowBase
     protected override void OnBuild()
     {
         BuildLeftSide();
-        AddElement(
-            () =>
-            {
-                var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
-                var rectTransform = fieldTransform.GetComponent<RectTransform>();
-                rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.anchoredPosition = new Vector2(10, -1220);
-                rectTransform.sizeDelta = new Vector2(-20, 600);
-                var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-                textField.text = PackageLicenseFilter.script.filterInfoJss.val;
-                PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
-                textField.UItext.fontSize = 26;
-                textField.backgroundColor = Color.white;
-                return textField;
-            }
-        );
+        AddElement(() =>
+        {
+            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+            var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
+            var rectTransform = fieldTransform.GetComponent<RectTransform>();
+            rectTransform.pivot = new Vector2(0, 0);
+            rectTransform.anchoredPosition = new Vector2(10, -1220);
+            rectTransform.sizeDelta = new Vector2(-20, 600);
+            var textField = fieldTransform.GetComponent<UIDynamicTextField>();
+            textField.text = PackageLicenseFilter.script.filterInfoJss.val;
+            PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
+            textField.UItext.fontSize = 26;
+            textField.backgroundColor = Color.white;
+            return textField;
+        });
         BuildRightSide();
     }
 
@@ -53,104 +51,92 @@ sealed class MainWindow : WindowBase
         AddSpacer(300, rightSide);
 
         AddHeaderTextField("CC auto-selection", rightSide);
-        AddElement(
-            () =>
-            {
-                // TODO
-                var button = script.CreateButton("Allows commercial use only", rightSide);
-                button.SetFocusedColor(Colors.lightGray);
-                button.height = 60;
-                button.button.onClick.AddListener(SelectAllowsCommercialUseOnly);
-                return button;
-            }
-        );
-        AddElement(
-            () =>
-            {
-                // TODO
-                var button = script.CreateButton("Allows modification only", rightSide);
-                button.SetFocusedColor(Colors.lightGray);
-                button.height = 60;
-                button.button.onClick.AddListener(SelectAllowsDerivativesOnly);
-                return button;
-            }
-        );
-        AddElement(
-            () =>
-            {
-                // TODO
-                var button = script.CreateButton("All CC", rightSide);
-                button.SetFocusedColor(Colors.lightGray);
-                button.height = 60;
-                button.button.onClick.AddListener(SelectAllCC);
-                return button;
-            }
-        );
+        AddElement(() =>
+        {
+            // TODO
+            var button = script.CreateButton("Allows commercial use only", rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            button.height = 60;
+            button.button.onClick.AddListener(SelectAllowsCommercialUseOnly);
+            return button;
+        });
+        AddElement(() =>
+        {
+            // TODO
+            var button = script.CreateButton("Allows modification only", rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            button.height = 60;
+            button.button.onClick.AddListener(SelectAllowsDerivativesOnly);
+            return button;
+        });
+        AddElement(() =>
+        {
+            // TODO
+            var button = script.CreateButton("All CC", rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            button.height = 60;
+            button.button.onClick.AddListener(SelectAllCC);
+            return button;
+        });
     }
 
     void BuildRightSide(bool rightSide = true)
     {
-        AddElement(
-            () =>
-            {
-                var action = PackageLicenseFilter.script.applyFilterAction;
-                var button = script.CreateButton(action.name.Bold(), rightSide);
-                button.SetFocusedColor(Colors.lightGray);
-                action.RegisterButton(button);
-                return button;
-            }
-        );
+        AddElement(() =>
+        {
+            var action = PackageLicenseFilter.script.applyFilterAction;
+            var button = script.CreateButton(action.name.Bold(), rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            action.RegisterButton(button);
+            return button;
+        });
 
         // TODO
-        AddElement(
-            () =>
-            {
-                var toggle = script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide);
-                toggle.SetFocusedColor(Colors.lightGray);
-                return toggle;
-            }
-        );
-
-        AddElement(
-            () =>
-            {
-                var textField = script.CreateTextField(PackageLicenseFilter.script.restartVamInfoJss, rightSide);
-                textField.backgroundColor = Color.clear;
-                textField.UItext.fontSize = 32;
-                var layout = textField.GetComponent<LayoutElement>();
-                layout.preferredHeight = 50f;
-                layout.minHeight = 50f;
-                return textField;
-            }
-        );
-
-        /* Version text field */
+        AddElement(() =>
         {
-            var versionJss = new JSONStorableString("version", "");
-            var versionTextField = CreateVersionTextField(versionJss);
-            AddElement(versionTextField);
-            PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
-        }
+            var toggle = script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide);
+            toggle.SetFocusedColor(Colors.lightGray);
+            return toggle;
+        });
+
+        AddElement(() =>
+        {
+            var textField = script.CreateTextField(PackageLicenseFilter.script.restartVamInfoJss, rightSide);
+            textField.backgroundColor = Color.clear;
+            textField.UItext.fontSize = 32;
+            var layout = textField.GetComponent<LayoutElement>();
+            layout.preferredHeight = 50f;
+            layout.minHeight = 50f;
+            return textField;
+        });
+
+        AddVersionTextField();
+    }
+
+    void AddVersionTextField()
+    {
+        var versionJss = new JSONStorableString("version", "");
+        var versionTextField = CreateVersionTextField(versionJss);
+        AddElement(versionTextField);
+        PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
     }
 
     void AddLicenseToggle(JSONStorableBool jsb, float posX, float posY)
     {
-        AddElement(
-            () =>
-            {
-                var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
-                var rectTransform = toggleTransform.GetComponent<RectTransform>();
-                rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
-                rectTransform.sizeDelta = new Vector2(-820, 50);
-                var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
-                toggle.label = jsb.name;
-                toggle.SetFocusedColor(Colors.lightGray);
-                PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
-                return toggle;
-            }
-        );
+        AddElement(() =>
+        {
+            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+            var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
+            var rectTransform = toggleTransform.GetComponent<RectTransform>();
+            rectTransform.pivot = new Vector2(0, 0);
+            rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
+            rectTransform.sizeDelta = new Vector2(-820, 50);
+            var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
+            toggle.label = jsb.name;
+            toggle.SetFocusedColor(Colors.lightGray);
+            PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
+            return toggle;
+        });
     }
 
     static void SelectAllowsCommercialUseOnly()

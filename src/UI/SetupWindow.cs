@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 sealed class SetupWindow : WindowBase
 {
@@ -17,27 +16,25 @@ sealed class SetupWindow : WindowBase
 
     void BuildLeftSide(bool rightSide = false)
     {
-        AddElement(
-            () =>
-            {
-                const string text = "Select AddonPackages directory location";
-                var jss = new JSONStorableString(text, text);
-                var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
-                var rectTransform = fieldTransform.GetComponent<RectTransform>();
-                rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.anchoredPosition = new Vector2(10, -100);
-                rectTransform.sizeDelta = new Vector2(-20, 50);
-                var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-                textField.text = jss.val;
-                textField.UItext.alignment = TextAnchor.LowerCenter;
-                textField.UItext.fontSize = 32;
-                textField.height = 60;
-                textField.backgroundColor = Color.clear;
-                PackageLicenseFilter.script.AddTextFieldToJss(textField, jss);
-                return textField;
-            }
-        );
+        AddElement(() =>
+        {
+            const string text = "Select AddonPackages directory location";
+            var jss = new JSONStorableString(text, text);
+            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+            var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
+            var rectTransform = fieldTransform.GetComponent<RectTransform>();
+            rectTransform.pivot = new Vector2(0, 0);
+            rectTransform.anchoredPosition = new Vector2(10, -100);
+            rectTransform.sizeDelta = new Vector2(-20, 50);
+            var textField = fieldTransform.GetComponent<UIDynamicTextField>();
+            textField.text = jss.val;
+            textField.UItext.alignment = TextAnchor.LowerCenter;
+            textField.UItext.fontSize = 32;
+            textField.height = 60;
+            textField.backgroundColor = Color.clear;
+            PackageLicenseFilter.script.AddTextFieldToJss(textField, jss);
+            return textField;
+        });
 
         var paths = PackageLicenseFilter.script.addonPackagesDirPaths;
         if(paths.Count > 0)
@@ -49,8 +46,8 @@ sealed class SetupWindow : WindowBase
             AddInfoTextField(
                 "No suitable locations found. Please setup the symlink first.",
                 rightSide,
-                height: 100,
-                fontSize: 28
+                100,
+                28
             );
         }
     }
@@ -61,52 +58,44 @@ sealed class SetupWindow : WindowBase
         {
             string path = paths[i];
             int n = i + 1;
-            AddElement(
-                path,
-                () =>
-                {
-                    var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                    var buttonTransform = Utils.DestroyLayout(script.InstantiateButton(parent));
-                    var rectTransform = buttonTransform.GetComponent<RectTransform>();
-                    rectTransform.pivot = new Vector2(0, 0);
-                    rectTransform.anchoredPosition = new Vector2(10, -100 - 65 * n);
-                    rectTransform.sizeDelta = new Vector2(-20, 50);
-                    var button = buttonTransform.GetComponent<UIDynamicButton>();
-                    button.SetFocusedColor(Colors.lightGray);
-                    button.buttonText.alignment = TextAnchor.MiddleLeft;
-                    button.height = 60;
-                    button.button.onClick.AddListener(
-                        () =>
-                        {
-                            PackageLicenseFilter.script.addonPackagesLocationJss.val = path;
-                            Refresh();
-                        }
-                    );
-                    return button;
-                }
-            );
-        }
-
-        var action = PackageLicenseFilter.script.saveAndContinueAction;
-        AddElement(
-            action.name,
-            () =>
+            AddElement(path, () =>
             {
                 var parent = script.UITransform.Find("Scroll View/Viewport/Content");
                 var buttonTransform = Utils.DestroyLayout(script.InstantiateButton(parent));
                 var rectTransform = buttonTransform.GetComponent<RectTransform>();
                 rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.anchoredPosition = new Vector2(275, -100 - (paths.Count + 2) * 65);
-                rectTransform.sizeDelta = new Vector2(-550, 50);
+                rectTransform.anchoredPosition = new Vector2(10, -100 - 65 * n);
+                rectTransform.sizeDelta = new Vector2(-20, 50);
                 var button = buttonTransform.GetComponent<UIDynamicButton>();
                 button.SetFocusedColor(Colors.lightGray);
-                button.label = action.name;
-                button.SetActiveStyle(false, true);
-                action.RegisterButton(button);
+                button.buttonText.alignment = TextAnchor.MiddleLeft;
                 button.height = 60;
+                button.button.onClick.AddListener(() =>
+                {
+                    PackageLicenseFilter.script.addonPackagesLocationJss.val = path;
+                    Refresh();
+                });
                 return button;
-            }
-        );
+            });
+        }
+
+        var action = PackageLicenseFilter.script.saveAndContinueAction;
+        AddElement(action.name, () =>
+        {
+            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
+            var buttonTransform = Utils.DestroyLayout(script.InstantiateButton(parent));
+            var rectTransform = buttonTransform.GetComponent<RectTransform>();
+            rectTransform.pivot = new Vector2(0, 0);
+            rectTransform.anchoredPosition = new Vector2(275, -100 - (paths.Count + 2) * 65);
+            rectTransform.sizeDelta = new Vector2(-550, 50);
+            var button = buttonTransform.GetComponent<UIDynamicButton>();
+            button.SetFocusedColor(Colors.lightGray);
+            button.label = action.name;
+            button.SetActiveStyle(false, true);
+            action.RegisterButton(button);
+            button.height = 60;
+            return button;
+        });
     }
 
     void BuildRightSide(bool rightSide = true)
@@ -125,7 +114,7 @@ sealed class SetupWindow : WindowBase
         foreach(string path in PackageLicenseFilter.script.addonPackagesDirPaths)
         {
             var button = GetElementAs<UIDynamicButton>(path);
-            if(button != null)
+            if(button)
             {
                 button.label = path == PackageLicenseFilter.script.addonPackagesLocationJss.val
                     ? "  > ".Bold() + path
@@ -134,7 +123,7 @@ sealed class SetupWindow : WindowBase
         }
 
         var saveButton = GetElement(PackageLicenseFilter.script.saveAndContinueAction.name);
-        if(saveButton != null)
+        if(saveButton)
         {
             bool optionIsSelected = !string.IsNullOrEmpty(PackageLicenseFilter.script.addonPackagesLocationJss.val);
             saveButton.SetActiveStyle(optionIsSelected, true);

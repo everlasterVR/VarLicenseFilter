@@ -138,6 +138,5 @@ static partial class UIDynamicExtensions
         {
             throw new ArgumentException($"UIDynamic {element.name} was null, or not an expected type");
         }
-
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using MVR.FileManagementSecure;
-using UnityEngine;
 
 sealed class VarPackage
 {

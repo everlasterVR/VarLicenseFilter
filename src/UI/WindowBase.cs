@@ -6,25 +6,14 @@ using UnityEngine.UI;
 
 class WindowBase : IWindow
 {
-    protected readonly MVRScript script;
+    readonly Dictionary<string, UIDynamic> _elements;
     readonly string _id;
 
-    public string GetId()
-    {
-        return _id;
-    }
-
-    readonly Dictionary<string, UIDynamic> _elements;
+    readonly UnityAction _onReturnToParent;
     protected readonly List<IWindow> nestedWindows;
-
-    public IWindow GetActiveNestedWindow()
-    {
-        return activeNestedWindow;
-    }
+    protected readonly MVRScript script;
 
     protected IWindow activeNestedWindow;
-
-    readonly UnityAction _onReturnToParent;
 
     protected WindowBase(MVRScript script, string id, UnityAction onReturnToParent = null)
     {
@@ -33,6 +22,120 @@ class WindowBase : IWindow
         _onReturnToParent = onReturnToParent;
         _elements = new Dictionary<string, UIDynamic>();
         nestedWindows = new List<IWindow>();
+    }
+
+    public string GetId()
+    {
+        return _id;
+    }
+
+    public IWindow GetActiveNestedWindow()
+    {
+        return activeNestedWindow;
+    }
+
+    public void Rebuild()
+    {
+        if(activeNestedWindow != null)
+        {
+            activeNestedWindow.Rebuild();
+        }
+        else
+        {
+            _elements.Clear();
+            if(_onReturnToParent != null)
+            {
+                AddBackButton(false, _onReturnToParent);
+            }
+
+            OnBuild();
+        }
+    }
+
+    public void ClosePopups()
+    {
+        if(activeNestedWindow != null)
+        {
+            activeNestedWindow.ClosePopups();
+        }
+        else
+        {
+            ClosePopupsSelf();
+        }
+    }
+
+    public void Clear()
+    {
+        if(activeNestedWindow != null)
+        {
+            activeNestedWindow.Clear();
+        }
+        else
+        {
+            ClearSelf();
+        }
+
+        OnClose();
+    }
+
+    protected virtual void OnBuild()
+    {
+    }
+
+    protected virtual void OnClose()
+    {
+    }
+
+    public void OnReturn()
+    {
+        activeNestedWindow.Clear();
+        activeNestedWindow = null;
+        if(_onReturnToParent != null)
+        {
+            AddBackButton(false, _onReturnToParent);
+        }
+
+        OnBuild();
+    }
+
+    protected UIDynamic GetElement(string key)
+    {
+        return _elements.ContainsKey(key) ? _elements[key] : null;
+    }
+
+    protected T GetElementAs<T>(string key)
+    {
+        if(_elements.ContainsKey(key))
+        {
+            var element = _elements[key];
+            if(element is T)
+            {
+                return (T) Convert.ChangeType(element, typeof(T));
+            }
+        }
+
+        return default(T);
+    }
+
+    protected void ClearSelf()
+    {
+        ClosePopupsSelf();
+        foreach(var element in _elements.ToList())
+        {
+            script.RemoveElement(element.Value);
+        }
+    }
+
+    void ClosePopupsSelf()
+    {
+        foreach(var element in _elements)
+        {
+            var uiDynamicPopup = element.Value as UIDynamicPopup;
+            if(uiDynamicPopup)
+            {
+                uiDynamicPopup.popup.visible = false;
+            }
+        }
     }
 
 #region *** Common Elements ***
@@ -59,20 +162,18 @@ class WindowBase : IWindow
 
     void AddBackButton(bool rightSide, UnityAction onReturnToParent)
     {
-        AddElement(
-            () =>
-            {
-                var button = script.CreateButton("Return", rightSide);
-                button.textColor = Color.white;
-                var colors = button.button.colors;
-                colors.normalColor = Colors.sliderGray;
-                colors.highlightedColor = Color.grey;
-                colors.pressedColor = Color.grey;
-                button.button.colors = colors;
-                button.AddListener(onReturnToParent);
-                return button;
-            }
-        );
+        AddElement(() =>
+        {
+            var button = script.CreateButton("Return", rightSide);
+            button.textColor = Color.white;
+            var colors = button.button.colors;
+            colors.normalColor = Colors.sliderGray;
+            colors.highlightedColor = Color.grey;
+            colors.pressedColor = Color.grey;
+            button.button.colors = colors;
+            button.AddListener(onReturnToParent);
+            return button;
+        });
     }
 
     UIDynamicTextField CreateBasicTextField(string text, bool rightSide)
@@ -117,30 +218,26 @@ class WindowBase : IWindow
 
     protected void AddHeaderTextField(string text, bool rightSide)
     {
-        AddElement(
-            () =>
-            {
-                var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
-                textField.UItext.alignment = TextAnchor.LowerLeft;
-                return textField;
-            }
-        );
+        AddElement(() =>
+        {
+            var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
+            textField.UItext.alignment = TextAnchor.LowerLeft;
+            return textField;
+        });
     }
 
     protected void AddInfoTextField(string text, bool rightSide, int height = 100, int fontSize = 26)
     {
-        AddElement(
-            () =>
-            {
-                var textField = CreateBasicTextField(text, rightSide);
-                textField.UItext.fontSize = fontSize;
-                textField.backgroundColor = Color.clear;
-                var layout = textField.GetComponent<LayoutElement>();
-                layout.preferredHeight = height;
-                layout.minHeight = height;
-                return textField;
-            }
-        );
+        AddElement(() =>
+        {
+            var textField = CreateBasicTextField(text, rightSide);
+            textField.UItext.fontSize = fontSize;
+            textField.backgroundColor = Color.clear;
+            var layout = textField.GetComponent<LayoutElement>();
+            layout.preferredHeight = height;
+            layout.minHeight = height;
+            return textField;
+        });
     }
 
     protected UIDynamicTextField CreateVersionTextField(JSONStorableString jss)
@@ -161,113 +258,4 @@ class WindowBase : IWindow
     }
 
 #endregion
-
-    public void Rebuild()
-    {
-        if(activeNestedWindow != null)
-        {
-            activeNestedWindow.Rebuild();
-        }
-        else
-        {
-            _elements.Clear();
-            if(_onReturnToParent != null)
-            {
-                AddBackButton(false, _onReturnToParent);
-            }
-
-            OnBuild();
-        }
-    }
-
-    protected virtual void OnBuild()
-    {
-    }
-
-    protected virtual void OnClose()
-    {
-    }
-
-    public void OnReturn()
-    {
-        activeNestedWindow.Clear();
-        activeNestedWindow = null;
-        if(_onReturnToParent != null)
-        {
-            AddBackButton(false, _onReturnToParent);
-        }
-
-        OnBuild();
-    }
-
-    protected UIDynamic GetElement(string key)
-    {
-        if(_elements.ContainsKey(key))
-        {
-            return _elements[key];
-        }
-
-        return null;
-    }
-
-    protected T GetElementAs<T>(string key)
-    {
-        if(_elements.ContainsKey(key))
-        {
-            var element = _elements[key];
-            if(element is T)
-            {
-                return (T) Convert.ChangeType(element, typeof(T));
-            }
-        }
-
-        return default(T);
-    }
-
-    public void ClosePopups()
-    {
-        if(activeNestedWindow != null)
-        {
-            activeNestedWindow.ClosePopups();
-        }
-        else
-        {
-            ClosePopupsSelf();
-        }
-    }
-
-    public void Clear()
-    {
-        if(activeNestedWindow != null)
-        {
-            activeNestedWindow.Clear();
-        }
-        else
-        {
-            ClearSelf();
-        }
-
-        OnClose();
-    }
-
-    protected void ClearSelf()
-    {
-        ClosePopupsSelf();
-        foreach(var element in _elements.ToList())
-        {
-            script.RemoveElement(element.Value);
-        }
-    }
-
-    void ClosePopupsSelf()
-    {
-        foreach(var element in _elements)
-        {
-            var uiDynamicPopup = element.Value as UIDynamicPopup;
-            if(uiDynamicPopup)
-            {
-                uiDynamicPopup.popup.visible = false;
-            }
-        }
-    }
 }
