@@ -4,8 +4,10 @@
     public string name { get; }
     public License license { get; }
     public string displayString { get; }
+
+    readonly bool _initialEnabled;
     public bool enabled { get; private set; }
-    public bool initialEnabled { get; }
+    public bool changed { get; private set; }
 
     public VarPackage(string path, string name, License license, bool enabled)
     {
@@ -13,29 +15,19 @@
         this.name = name;
         this.license = license;
         displayString = $"[{license.name}]  {name}";
-        this.enabled = enabled;
-        initialEnabled = enabled;
+        _initialEnabled = enabled;
+        this.enabled = _initialEnabled;
     }
 
-    public bool SyncStatus()
+    public void SyncEnabled()
     {
         enabled = license.enabledJsb.val;
-        if(enabled)
-        {
-            FileUtils.DeleteDisabledFile(path);
-        }
-        else
-        {
-            FileUtils.CreateDisabledFile(path);
-        }
-
-        return enabled != initialEnabled;
+        changed = enabled != _initialEnabled;
     }
 
-    public bool Disable()
+    public void Disable()
     {
         enabled = false;
-        FileUtils.CreateDisabledFile(path);
-        return enabled != initialEnabled;
+        changed = enabled != _initialEnabled;
     }
 }

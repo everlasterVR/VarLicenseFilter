@@ -155,7 +155,23 @@ sealed class PackageLicenseFilter : ScriptBase
         });
         restartVamAction = new JSONStorableAction("Restart VAM", () =>
         {
-            // TODO sync .disabled files here
+            foreach(var package in _varPackages)
+            {
+                if(!package.changed)
+                {
+                    continue;
+                }
+
+                if(package.enabled)
+                {
+                    FileUtils.DeleteDisabledFile(package.path);
+                }
+                else
+                {
+                    FileUtils.CreateDisabledFile(package.path);
+                }
+            }
+
             RestartVAM();
         });
     }
@@ -382,7 +398,7 @@ sealed class PackageLicenseFilter : ScriptBase
             if(willEnable)
             {
                 sb.Append(_enabledInfoList.Count);
-                sb.AppendLine(" packages will be enabled:\n");
+                sb.AppendLine(" package(s) will be enabled:\n");
                 sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
                 sb.AppendLine("");
             }
@@ -391,7 +407,7 @@ sealed class PackageLicenseFilter : ScriptBase
             if(willDisable)
             {
                 sb.Append(_disabledInfoList.Count);
-                sb.AppendLine(" packages will be disabled:\n");
+                sb.AppendLine(" package(s) will be disabled:\n");
                 sb.AppendLine(string.Join("\n", _disabledInfoList.ToArray()));
                 sb.AppendLine("");
             }
@@ -417,9 +433,13 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         if(_preDisabledInfoList.Count > 0)
         {
-            sb.AppendLine($"{_preDisabledInfoList.Count} packages are currently disabled:\n");
+            sb.AppendLine($"{_preDisabledInfoList.Count} package(s) are currently disabled:\n");
             sb.AppendLine(string.Join("\n", _preDisabledInfoList.ToArray()));
             sb.AppendLine("");
+        }
+        else
+        {
+            sb.AppendLine("0 packages are currently disabled.\n");
         }
     }
 
@@ -427,7 +447,7 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         if(_errorsInfoList.Count > 0)
         {
-            sb.AppendLine($"{_errorsInfoList.Count} packages have errors:\n");
+            sb.AppendLine($"{_errorsInfoList.Count} package(s) have errors:\n");
             sb.AppendLine(string.Join("\n", _errorsInfoList.ToArray()));
             sb.AppendLine("");
         }
@@ -451,8 +471,8 @@ sealed class PackageLicenseFilter : ScriptBase
                 var package = _varPackages.Find(p => p.path == path);
                 if(package != null)
                 {
-                    bool disabled = package.Disable();
-                    if(disabled)
+                    package.Disable();
+                    if(package.changed)
                     {
                         _disabledInfoList.Add(package.displayString);
                     }
@@ -480,8 +500,8 @@ sealed class PackageLicenseFilter : ScriptBase
 
         foreach(var package in _varPackages)
         {
-            bool statusChanged = package.SyncStatus();
-            if(statusChanged)
+            package.SyncEnabled();
+            if(package.changed)
             {
                 if(package.enabled)
                 {
