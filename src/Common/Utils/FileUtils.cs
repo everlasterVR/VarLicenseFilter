@@ -9,7 +9,8 @@ static class FileUtils
 {
     const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
     public const string PREFS_FILE = "preferences.json";
-    public const string DISABLED_EXT = ".disabled";
+    public const string LICENSE_CACHE_FILE = "licensecache.json";
+    public const string DISABLED_EXT = "disabled";
 
     public static IEnumerable<string> FindDirPaths(string rootPath, string dirName)
     {
@@ -42,9 +43,9 @@ static class FileUtils
         return result;
     }
 
-    public static IEnumerable<string> FindVarFilePaths()
+    public static IEnumerable<string> FindVarFilePaths(string addonPackagesLocation)
     {
-        return FindFilePaths("AddonPackages", "*.var");
+        return FindFilePaths(addonPackagesLocation, "*.var");
     }
 
     static IEnumerable<string> FindFilePaths(string rootPath, string pattern)
@@ -74,6 +75,18 @@ static class FileUtils
         }
 
         return result;
+    }
+
+    public static JSONClass ReadLicenseCacheJSON()
+    {
+        EnsureDataDirExists();
+        return ReadJSON($"{DATA_DIR}/{LICENSE_CACHE_FILE}");
+    }
+
+    public static void WriteLicenseCacheJSON(JSONClass jc, UserActionCallback confirmCallback = null)
+    {
+        EnsureDataDirExists();
+        WriteJSON(jc, $"{DATA_DIR}/{LICENSE_CACHE_FILE}", confirmCallback);
     }
 
     public static JSONClass ReadPrefsJSON()
@@ -109,6 +122,21 @@ static class FileUtils
     public static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null)
     {
         FileManagerSecure.WriteAllText(path, jc.ToString(""), confirmCallback, null, null);
+    }
+
+    public static bool FileExists(string path)
+    {
+        return FileManagerSecure.FileExists(path);
+    }
+
+    public static void DeleteDisabledFile(string addonPackagePath)
+    {
+        FileManagerSecure.DeleteFile($"{addonPackagePath}.{DISABLED_EXT}");
+    }
+
+    public static void CreateDisabledFile(string addonPackagePath)
+    {
+        FileManagerSecure.WriteAllText($"{addonPackagePath}.{DISABLED_EXT}", string.Empty);
     }
 
     static void EnsureDataDirExists()

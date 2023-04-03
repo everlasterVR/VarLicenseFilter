@@ -59,6 +59,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
     }
 
+    Dictionary<string, string> _packageLicenseCache;
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
     public readonly Dictionary<string, License> licenseTypes = new Dictionary<string, License>
     {
@@ -102,6 +103,7 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             FindAddonPackagesDirPaths();
             SetupStorables();
+            ReadLicenseCacheFromFile();
             ReadUserPreferencesFromFile();
             InitBindings(); // Might already be setup in OnBindingsListRequested.
             SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
@@ -140,7 +142,24 @@ sealed class PackageLicenseFilter : ScriptBase
         saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
         filterInfoJss = new JSONStorableString("Filter info", "");
         applyFilterAction = new JSONStorableAction("Apply filter", ApplyFilter);
-        restartVamAction = new JSONStorableAction("Restart VAM", SuperController.singleton.HardReset);
+        restartVamAction = new JSONStorableAction("Restart VAM", () =>
+        {
+            // TODO sync .disabled files here
+            SyncLicenseCacheFile();
+            SuperController.singleton.HardReset();
+        });
+    }
+
+    void ReadLicenseCacheFromFile()
+    {
+        var cacheJson = FileUtils.ReadLicenseCacheJSON();
+        _packageLicenseCache = JSONUtils.JsonClassToStringDictionary(cacheJson);
+    }
+
+    void SyncLicenseCacheFile()
+    {
+        var cacheJson = JSONUtils.StringDictionaryToJsonClass(_packageLicenseCache);
+        FileUtils.WriteLicenseCacheJSON(cacheJson);
     }
 
     void ReadUserPreferencesFromFile()
@@ -183,14 +202,21 @@ sealed class PackageLicenseFilter : ScriptBase
         bindings.Init();
     }
 
+    StringBuilder _errors;
+    bool _cacheUpdated;
+
     void InitPackages()
     {
-        var errorPackages = new StringBuilder();
+        _errors = new StringBuilder();
+        _cacheUpdated = false;
         int enabledPackagesCount = 0;
         int disabledPackagesCount = 0;
         string thisPackageName = this.GetPackageName();
 
-        foreach(string path in FileUtils.FindVarFilePaths())
+        // TODO healthcheck on dir
+        // TODO change dir
+
+        foreach(string path in FileUtils.FindVarFilePaths(addonPackagesLocationJss.val))
         {
             string fileName = Utils.BaseName(path);
             if(!string.IsNullOrEmpty(thisPackageName) && fileName.StartsWith(thisPackageName))
@@ -198,28 +224,21 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
-            string metaJsonPath = path + ":/meta.json";
-            if(!FileManagerSecure.FileExists(metaJsonPath))
+            bool isDisabled = FileUtils.FileExists($"{path}.disabled");
+            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(fileName) : ReadEnabledPackageLicenseType(path, fileName);
+            if(string.IsNullOrEmpty(licenseType))
             {
-                errorPackages.AppendLine($"{fileName}: Missing meta.json");
                 continue;
             }
 
-            var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
-            if(!metaJson.HasKey("licenseType"))
+            if(!licenseTypes.ContainsKey(licenseType))
             {
-                errorPackages.AppendLine($"{fileName}: Missing 'licenseType' field in meta.json");
+                _cacheUpdated = _packageLicenseCache.Remove(fileName);
+                _errors.AppendLine($"{fileName}: Unknown license type {licenseType}");
                 continue;
             }
 
-            string licenseString = metaJson["licenseType"];
-            if(!licenseTypes.ContainsKey(licenseString))
-            {
-                errorPackages.AppendLine($"{fileName}: Unknown license {licenseString}");
-                continue;
-            }
-
-            var varPackage = new VarPackage(path, fileName, licenseTypes[licenseString], addonPackagesLocationJss.val);
+            var varPackage = new VarPackage(path, fileName, licenseTypes[licenseType], !isDisabled);
             _varPackages.Add(varPackage);
             if(varPackage.enabled)
             {
@@ -231,18 +250,62 @@ sealed class PackageLicenseFilter : ScriptBase
             }
         }
 
+        if(_cacheUpdated)
+        {
+            SyncLicenseCacheFile();
+        }
+
         var infoText = new StringBuilder();
         infoText.Append("\n".Size(8));
         infoText.AppendLine($"Enabled packages count: {enabledPackagesCount}".Bold());
         infoText.AppendLine($"Disabled packages count: {disabledPackagesCount}".Bold());
 
-        if(errorPackages.Length > 0)
+        if(_errors.Length > 0)
         {
-            infoText.AppendLine("Packages with license errors:\n".Bold());
-            infoText.AppendLine(errorPackages.ToString());
+            infoText.AppendLine("Packages with errors:\n".Bold());
+            infoText.AppendLine(_errors.ToString());
         }
 
         filterInfoJss.val = infoText.ToString();
+    }
+
+    string ReadDisabledPackageLicenseType(string fileName)
+    {
+        if(!_packageLicenseCache.ContainsKey(fileName))
+        {
+            _errors.AppendLine($"{fileName}: Disabled package's license type cannot be read from meta.json.");
+            return null;
+            // TODO should enable package and restart
+        }
+
+        return _packageLicenseCache[fileName];
+    }
+
+    string ReadEnabledPackageLicenseType(string path, string fileName)
+    {
+        if(_packageLicenseCache.ContainsKey(fileName))
+        {
+            return _packageLicenseCache[fileName];
+        }
+
+        string metaJsonPath = $"{path}:/meta.json";
+        if(!FileManagerSecure.FileExists(metaJsonPath))
+        {
+            _errors.AppendLine($"{fileName}: Missing meta.json");
+            return null;
+        }
+
+        var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
+        if(!metaJson.HasKey("licenseType"))
+        {
+            _errors.AppendLine($"{fileName}: Missing 'licenseType' field in meta.json");
+            return null;
+        }
+
+        string licenseType = metaJson["licenseType"].Value;
+        _packageLicenseCache[fileName] = licenseType;
+        _cacheUpdated = true;
+        return licenseType;
     }
 
     void SaveAndContinue()
@@ -267,7 +330,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 Color color;
                 if(package.enabled)
                 {
-                    color = Color.green;
+                    color = Colors.darkGreen;
                     enabledPackagesCount++;
                 }
                 else
@@ -276,7 +339,7 @@ sealed class PackageLicenseFilter : ScriptBase
                     disabledPackagesCount++;
                 }
 
-                changedPackagesList.AppendLine($"{package.license.name.Color(color)}  {package.name}");
+                changedPackagesList.AppendLine($"{package.license.name.Bold().Color(color)}  {package.name}");
             }
         }
 
@@ -301,6 +364,10 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             infoText.AppendLine($"{disabledPackagesCount} packages will be disabled. VAM restart needed!\n");
             infoText.AppendLine(changedPackagesList.ToString());
+        }
+        else
+        {
+            infoText.AppendLine("No packages changed.");
         }
 
         filterInfoJss.val = infoText.ToString();
