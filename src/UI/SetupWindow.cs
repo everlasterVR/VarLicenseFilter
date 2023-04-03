@@ -9,13 +9,6 @@ sealed class SetupWindow : WindowBase
 
     protected override void OnBuild()
     {
-        BuildLeftSide();
-        BuildRightSide();
-        Refresh();
-    }
-
-    void BuildLeftSide(bool rightSide = false)
-    {
         AddElement(() =>
         {
             const string text = "Select AddonPackages directory location";
@@ -45,11 +38,21 @@ sealed class SetupWindow : WindowBase
         {
             AddInfoTextField(
                 "No suitable locations found. Please setup the symlink first.",
-                rightSide,
+                false,
                 100,
                 28
             );
         }
+
+        /* Version text field */
+        {
+            var versionJss = new JSONStorableString("version", "");
+            var versionTextField = CreateVersionTextField(versionJss);
+            AddElement(versionTextField);
+            PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
+        }
+
+        Refresh();
     }
 
     void BuildOptionsList(List<string> paths)
@@ -98,18 +101,7 @@ sealed class SetupWindow : WindowBase
         });
     }
 
-    void BuildRightSide(bool rightSide = true)
-    {
-        /* Version text field */
-        {
-            var versionJss = new JSONStorableString("version", "");
-            var versionTextField = CreateVersionTextField(versionJss);
-            AddElement(versionTextField);
-            PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
-        }
-    }
-
-    public void Refresh()
+    void Refresh()
     {
         foreach(string path in PackageLicenseFilter.script.addonPackagesDirPaths)
         {
