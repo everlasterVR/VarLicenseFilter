@@ -172,12 +172,12 @@ sealed class PackageLicenseFilter : ScriptBase
         var errorPackages = new StringBuilder();
         int enabledPackagesCount = 0;
         int disabledPackagesCount = 0;
-        string packageName = this.GetPackageName();
+        string thisPackageName = this.GetPackageName();
 
         foreach(string path in FileUtils.FindVarFilePaths())
         {
             string fileName = Utils.BaseName(path);
-            if(fileName.StartsWith(packageName))
+            if(!string.IsNullOrEmpty(thisPackageName) && fileName.StartsWith(thisPackageName))
             {
                 continue;
             }

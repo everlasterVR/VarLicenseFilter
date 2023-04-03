@@ -16,7 +16,7 @@ sealed class VarPackage
         this.path = path;
         this.name = name;
         this.license = license;
-        SyncStatus();
+        enabled = license.enabledJsb.val;
         initialEnabled = enabled;
         _disabledFilePath = Regex.Replace(path, "^AddonPackages/", addonPackagesDirPath) + FileUtils.DISABLED_EXT;
     }
