@@ -153,7 +153,7 @@ sealed class PackageLicenseFilter : ScriptBase
             FileUtils.WriteTmpEnabledPackagesFile(string.Join("\n", _fixablePackagePaths.ToArray()));
             RestartVAM();
         });
-        restartVamAction = new JSONStorableAction("Restart VAM", () =>
+        restartVamAction = new JSONStorableAction("Restart VAM to apply changes", () =>
         {
             foreach(var package in _varPackages)
             {
@@ -243,6 +243,7 @@ sealed class PackageLicenseFilter : ScriptBase
     List<string> _disabledInfoList;
     List<string> _enabledInfoList;
     bool _cacheUpdated;
+    public bool requireRestart { get; private set; }
     public bool requireFixAndRestart { get; private set; }
 
     void InitPackages()
@@ -330,11 +331,11 @@ sealed class PackageLicenseFilter : ScriptBase
             {
                 DisableTemporarilyEnabledPackages(_tmpEnabledPackageNames);
                 FileUtils.DeleteTmpEnabledPackagesFile();
-                UpdateInfoPanel(true);
+                UpdateInfoPanelText(true);
             }
             else
             {
-                UpdateInfoPanel(false);
+                UpdateInfoPanelText(false);
             }
         }
     }
@@ -379,7 +380,7 @@ sealed class PackageLicenseFilter : ScriptBase
         return licenseType;
     }
 
-    void UpdateInfoPanel(bool onApplyChanges)
+    void UpdateInfoPanelText(bool onApplyChanges)
     {
         var sb = new StringBuilder();
         sb.Append("\n".Size(8));
@@ -463,6 +464,8 @@ sealed class PackageLicenseFilter : ScriptBase
 
     void DisableTemporarilyEnabledPackages(List<string> tmpEnabledPackagePaths)
     {
+        requireRestart = false;
+
         try
         {
             _disabledInfoList = new List<string>();
@@ -474,6 +477,7 @@ sealed class PackageLicenseFilter : ScriptBase
                     package.Disable();
                     if(package.changed)
                     {
+                        requireRestart = true;
                         _disabledInfoList.Add(package.displayString);
                     }
                     else
@@ -486,6 +490,8 @@ sealed class PackageLicenseFilter : ScriptBase
                     _errorsInfoList.Add($"Package with path '{path}' not found!");
                 }
             }
+
+            ((MainWindow) _mainWindow).RefreshRestartButton();
         }
         catch(Exception e)
         {
@@ -495,6 +501,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
     void ApplyFilter()
     {
+        requireRestart = false;
         _enabledInfoList = new List<string>();
         _disabledInfoList = new List<string>();
 
@@ -503,6 +510,7 @@ sealed class PackageLicenseFilter : ScriptBase
             package.SyncEnabled();
             if(package.changed)
             {
+                requireRestart = true;
                 if(package.enabled)
                 {
                     _enabledInfoList.Add(package.displayString);
@@ -514,7 +522,8 @@ sealed class PackageLicenseFilter : ScriptBase
             }
         }
 
-        UpdateInfoPanel(true);
+        ((MainWindow) _mainWindow).RefreshRestartButton();
+        UpdateInfoPanelText(true);
     }
 
 #endregion

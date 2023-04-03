@@ -110,9 +110,9 @@ sealed class MainWindow : WindowBase
 
         if(PackageLicenseFilter.script.requireFixAndRestart)
         {
-            AddElement(() =>
+            var action = PackageLicenseFilter.script.fixAndRestartAction;
+            AddElement(action.name, () =>
             {
-                var action = PackageLicenseFilter.script.fixAndRestartAction;
                 var button = script.CreateButton(action.name, rightSide);
                 button.SetFocusedColor(Colors.lightGray);
                 action.RegisterButton(button);
@@ -121,12 +121,13 @@ sealed class MainWindow : WindowBase
         }
         else
         {
-            AddElement(() =>
+            var action = PackageLicenseFilter.script.restartVamAction;
+            AddElement(action.name, () =>
             {
-                var action = PackageLicenseFilter.script.restartVamAction;
                 var button = script.CreateButton(action.name, rightSide);
                 button.SetFocusedColor(Colors.lightGray);
                 action.RegisterButton(button);
+                button.SetActiveStyle(false, true);
                 return button;
             });
         }
@@ -158,6 +159,15 @@ sealed class MainWindow : WindowBase
             PackageLicenseFilter.script.AddToggleToJsb(toggle, license.enabledJsb);
             return toggle;
         });
+    }
+
+    public void RefreshRestartButton()
+    {
+        var element = GetElement(PackageLicenseFilter.script.restartVamAction.name);
+        if(element)
+        {
+            element.SetActiveStyle(PackageLicenseFilter.script.requireRestart, true);
+        }
     }
 
     delegate bool LicenseFilter(License license);
