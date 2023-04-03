@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
 
 sealed class MainWindow : WindowBase
 {
@@ -18,7 +17,7 @@ sealed class MainWindow : WindowBase
             var rectTransform = fieldTransform.GetComponent<RectTransform>();
             rectTransform.pivot = new Vector2(0, 0);
             rectTransform.anchoredPosition = new Vector2(10, -1220);
-            rectTransform.sizeDelta = new Vector2(-20, 560);
+            rectTransform.sizeDelta = new Vector2(-15, 560);
             var textField = fieldTransform.GetComponent<UIDynamicTextField>();
             textField.text = PackageLicenseFilter.script.filterInfoJss.val;
             PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
@@ -49,9 +48,34 @@ sealed class MainWindow : WindowBase
             }
         }
 
-        AddSpacer(300, rightSide);
+        AddSpacer(455, rightSide);
 
-        AddHeaderTextField("CC auto-selection", rightSide);
+        AddElement(() =>
+        {
+            var toggle = script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide);
+            toggle.SetFocusedColor(Colors.lightGray);
+            return toggle;
+        });
+
+        AddElement(() =>
+        {
+            var action = PackageLicenseFilter.script.applyFilterAction;
+            var button = script.CreateButton(action.name, rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            button.height = 100;
+            action.RegisterButton(button);
+            return button;
+        });
+    }
+
+    void BuildRightSide(bool rightSide = true)
+    {
+        AddElement(() =>
+        {
+            var textField = CreateHeaderTextField("\n".Size(12) + "CC auto-selection", 30, 50, rightSide);
+            return textField;
+        });
+
         AddElement(() =>
         {
             var button = script.CreateButton("Select all", rightSide);
@@ -80,36 +104,16 @@ sealed class MainWindow : WindowBase
             button.button.onClick.AddListener(() => SelectCCLicenseTypes(license => license.allowsDerivatives));
             return button;
         });
-    }
 
-    void BuildRightSide(bool rightSide = true)
-    {
+        AddSpacer(245, rightSide);
+
         AddElement(() =>
         {
-            var action = PackageLicenseFilter.script.applyFilterAction;
-            var button = script.CreateButton(action.name.Bold(), rightSide);
+            var action = PackageLicenseFilter.script.restartVamAction;
+            var button = script.CreateButton(action.name, rightSide);
             button.SetFocusedColor(Colors.lightGray);
             action.RegisterButton(button);
             return button;
-        });
-
-        // TODO
-        AddElement(() =>
-        {
-            var toggle = script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide);
-            toggle.SetFocusedColor(Colors.lightGray);
-            return toggle;
-        });
-
-        AddElement(() =>
-        {
-            var textField = script.CreateTextField(PackageLicenseFilter.script.restartVamInfoJss, rightSide);
-            textField.backgroundColor = Color.clear;
-            textField.UItext.fontSize = 32;
-            var layout = textField.GetComponent<LayoutElement>();
-            layout.preferredHeight = 50f;
-            layout.minHeight = 50f;
-            return textField;
         });
 
         AddVersionTextField();

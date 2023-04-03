@@ -44,12 +44,6 @@ sealed class PackageLicenseFilter : ScriptBase
             /* Used to store version in save JSON and communicate version to other plugin instances */
             this.NewJSONStorableString(Constant.VERSION, VERSION);
 
-            if(containingAtom.type != "SessionPluginManager" && containingAtom.type != "CoreControl")
-            {
-                FailInitWithMessage("Add to Session Plugins or Scene Plugins.");
-                return;
-            }
-
             if(containingAtom.FindStorablesByRegexMatch(Utils.NewRegex($@"^plugin#\d+_{nameof(PackageLicenseFilter)}")).Count > 0)
             {
                 FailInitWithMessage($"An instance of {nameof(PackageLicenseFilter)} is already added.");
@@ -83,9 +77,10 @@ sealed class PackageLicenseFilter : ScriptBase
     public List<string> addonPackagesDirPaths { get; private set; }
     public JSONStorableString addonPackagesLocationJss { get; private set; }
     public JSONStorableAction saveAndContinueAction { get; private set; }
-    public JSONStorableString restartVamInfoJss { get; private set; }
     public JSONStorableString filterInfoJss { get; private set; }
     public JSONStorableAction applyFilterAction { get; private set; }
+    public JSONStorableAction restartVamAction { get; private set; }
+    Bindings bindings { get; set; }
 
     IWindow _mainWindow;
     IWindow _setupWindow;
@@ -108,6 +103,8 @@ sealed class PackageLicenseFilter : ScriptBase
             FindAddonPackagesDirPaths();
             SetupStorables();
             ReadUserPreferencesFromFile();
+            InitBindings(); // Might already be setup in OnBindingsListRequested.
+            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
 
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
@@ -141,9 +138,9 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         addonPackagesLocationJss = new JSONStorableString("AddonPackages location", "");
         saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
-        restartVamInfoJss = new JSONStorableString("Restart VAM info", "");
         filterInfoJss = new JSONStorableString("Filter info", "");
         applyFilterAction = new JSONStorableAction("Apply filter", ApplyFilter);
+        restartVamAction = new JSONStorableAction("Restart VAM", SuperController.singleton.HardReset);
     }
 
     void ReadUserPreferencesFromFile()
@@ -167,6 +164,25 @@ sealed class PackageLicenseFilter : ScriptBase
         FileUtils.WritePrefsJSON(jc);
     }
 
+    // https://github.com/vam-community/vam-plugins-interop-specs/blob/main/keybindings.md
+    public void OnBindingsListRequested(List<object> bindingsList)
+    {
+        InitBindings(); // Might already be setup in Init.
+        bindingsList.Add(bindings.Namespace());
+        bindingsList.AddRange(bindings.Actions());
+    }
+
+    void InitBindings()
+    {
+        if(bindings)
+        {
+            return;
+        }
+
+        bindings = gameObject.AddComponent<Bindings>();
+        bindings.Init();
+    }
+
     void InitPackages()
     {
         var errorPackages = new StringBuilder();
@@ -182,7 +198,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
-            string metaJsonPath = path + ":\\meta.json";
+            string metaJsonPath = path + ":/meta.json";
             if(!FileManagerSecure.FileExists(metaJsonPath))
             {
                 errorPackages.AppendLine($"{fileName}: Missing meta.json");
@@ -237,62 +253,58 @@ sealed class PackageLicenseFilter : ScriptBase
         _mainWindow.Rebuild();
     }
 
-    bool _packagesStatusChanged;
-
     void ApplyFilter()
     {
         int enabledPackagesCount = 0;
         int disabledPackagesCount = 0;
-        var enabledPackagesList = new StringBuilder();
-        var disabledPackagesList = new StringBuilder();
+        var changedPackagesList = new StringBuilder();
 
-        bool anyPackageStatusChanged = false;
         foreach(var package in _varPackages)
         {
             bool statusChanged = package.SyncStatus();
             if(statusChanged)
             {
+                Color color;
                 if(package.enabled)
                 {
+                    color = Color.green;
                     enabledPackagesCount++;
-                    enabledPackagesList.AppendLine($"{package.license.name.Color(Color.green)}  {package.name}");
                 }
                 else
                 {
+                    color = Color.red;
                     disabledPackagesCount++;
-                    disabledPackagesList.AppendLine($"{package.license.name.Color(Color.red)}  {package.name}");
                 }
-            }
 
-            anyPackageStatusChanged = anyPackageStatusChanged || statusChanged;
+                changedPackagesList.AppendLine($"{package.license.name.Color(color)}  {package.name}");
+            }
         }
 
         var infoText = new StringBuilder();
         infoText.Append("\n".Size(8));
 
-        if(enabledPackagesCount > 0)
+        if(enabledPackagesCount > 0 && disabledPackagesCount > 0)
         {
-            infoText.AppendLine($"{enabledPackagesCount} packages will be enabled:\n".Bold());
-            infoText.AppendLine(enabledPackagesList.ToString());
+            infoText.AppendLine(
+                $"{enabledPackagesCount} packages will be enabled and " +
+                $"{disabledPackagesCount} packages will be disabled." +
+                " VAM restart needed!\n"
+            );
+            infoText.AppendLine(changedPackagesList.ToString());
+        }
+        else if(enabledPackagesCount > 0)
+        {
+            infoText.AppendLine($"{enabledPackagesCount} packages will be enabled. VAM restart needed!\n");
+            infoText.AppendLine(changedPackagesList.ToString());
+        }
+        else if(disabledPackagesCount > 0)
+        {
+            infoText.AppendLine($"{disabledPackagesCount} packages will be disabled. VAM restart needed!\n");
+            infoText.AppendLine(changedPackagesList.ToString());
         }
 
-        if(disabledPackagesCount > 0)
-        {
-            infoText.AppendLine($"{disabledPackagesCount} packages will be disabled:\n".Bold());
-            infoText.AppendLine(disabledPackagesList.ToString());
-        }
-
-        if(anyPackageStatusChanged)
-        {
-            filterInfoJss.val = infoText.ToString();
-        }
-        else
-        {
-            filterInfoJss.val = "\n".Size(8) + "Nothing was changed.";
-        }
-
-        _packagesStatusChanged = anyPackageStatusChanged;
-        restartVamInfoJss.val = _packagesStatusChanged ? "Restart VAM to reload packages".Bold().Color(new Color(0.75f, 0, 0)) : "";
+        filterInfoJss.val = infoText.ToString();
+        // ((MainWindow) _mainWindow).SyncApplyFilterButtonText(_packagesStatusChanged);
     }
 
 #endregion
@@ -408,8 +420,10 @@ sealed class PackageLicenseFilter : ScriptBase
         try
         {
             base.OnDestroy();
+            Destroy(bindings);
             /* Nullify static reference fields to let GC collect unreachable instances */
             script = null;
+            SuperController.singleton.BroadcastMessage("OnActionsProviderDestroyed", this, SendMessageOptions.DontRequireReceiver);
         }
         catch(Exception e)
         {

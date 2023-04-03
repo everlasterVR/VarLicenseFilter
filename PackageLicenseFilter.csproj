@@ -77,6 +77,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="src\Bindings.cs" />
         <Compile Include="src\Common\Components\UnityEventsListener.cs" />
         <Compile Include="src\Common\Extensions\AtomExtensions.cs" />
         <Compile Include="src\Common\Extensions\JSONStorableExtensions.cs" />
