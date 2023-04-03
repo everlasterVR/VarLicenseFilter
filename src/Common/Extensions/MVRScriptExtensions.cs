@@ -10,6 +10,12 @@ static partial class MVRScriptExtensions
         return packageId == null ? "" : $"{packageId}:/";
     }
 
+    public static string GetPackageName(this MVRScript script)
+    {
+        string packageId = script.GetPackageId();
+        return packageId == null ? "" : packageId.Substring(0, packageId.LastIndexOf('.'));
+    }
+
     //MacGruber / Discord 20.10.2020
     //Get path prefix of the package that contains this plugin
     public static string GetPackageId(this MVRScript script)
