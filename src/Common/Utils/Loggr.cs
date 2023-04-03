@@ -1,8 +1,8 @@
 ﻿static class Loggr
 {
-    public static void Error(string error)
+    public static void Error(string error, bool report = true)
     {
-        SuperController.LogError($"{nameof(PackageLicenseFilter)}: {error}. Please report the issue!");
+        SuperController.LogError($"{nameof(PackageLicenseFilter)}: {error}.{(report ? " Please report the issue!" : "")}");
     }
 
     public static void Message(string message)

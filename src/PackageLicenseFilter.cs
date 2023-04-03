@@ -2,8 +2,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using MVR.FileManagementSecure;
 using SimpleJSON;
 using UnityEngine;
 
@@ -80,6 +80,7 @@ sealed class PackageLicenseFilter : ScriptBase
     public JSONStorableAction saveAndContinueAction { get; private set; }
     public JSONStorableString filterInfoJss { get; private set; }
     public JSONStorableAction applyFilterAction { get; private set; }
+    public JSONStorableAction fixAndRestartAction { get; private set; }
     public JSONStorableAction restartVamAction { get; private set; }
     Bindings bindings { get; set; }
 
@@ -101,7 +102,6 @@ sealed class PackageLicenseFilter : ScriptBase
 
         try
         {
-            FindAddonPackagesDirPaths();
             SetupStorables();
             ReadLicenseCacheFromFile();
             ReadUserPreferencesFromFile();
@@ -112,12 +112,13 @@ sealed class PackageLicenseFilter : ScriptBase
             _setupWindow = new SetupWindow();
             if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
             {
+                FindAddonPackagesDirPaths();
                 _setupWindow.Rebuild();
             }
             else
             {
-                _mainWindow.Rebuild();
                 InitPackages();
+                _mainWindow.Rebuild();
             }
 
             initialized = true;
@@ -142,12 +143,27 @@ sealed class PackageLicenseFilter : ScriptBase
         saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
         filterInfoJss = new JSONStorableString("Filter info", "");
         applyFilterAction = new JSONStorableAction("Apply filter", ApplyFilter);
+        fixAndRestartAction = new JSONStorableAction("Fix cache and restart VAM", () =>
+        {
+            foreach(string path in _fixablePackagePaths)
+            {
+                FileUtils.DeleteDisabledFile(path);
+            }
+
+            FileUtils.WriteTmpEnabledPackagesFile(string.Join("\n", _fixablePackagePaths.ToArray()));
+            RestartVAM();
+        });
         restartVamAction = new JSONStorableAction("Restart VAM", () =>
         {
             // TODO sync .disabled files here
-            SyncLicenseCacheFile();
-            SuperController.singleton.HardReset();
+            RestartVAM();
         });
+    }
+
+    void RestartVAM()
+    {
+        SyncLicenseCacheFile();
+        SuperController.singleton.HardReset();
     }
 
     void ReadLicenseCacheFromFile()
@@ -156,6 +172,7 @@ sealed class PackageLicenseFilter : ScriptBase
         _packageLicenseCache = JSONUtils.JsonClassToStringDictionary(cacheJson);
     }
 
+    // TODO indexing?
     void SyncLicenseCacheFile()
     {
         var cacheJson = JSONUtils.StringDictionaryToJsonClass(_packageLicenseCache);
@@ -202,15 +219,27 @@ sealed class PackageLicenseFilter : ScriptBase
         bindings.Init();
     }
 
-    StringBuilder _errors;
+    List<string> _preDisabledInfoList;
+    List<string> _errorsInfoList;
+    List<string> _fixablePackageNames;
+    List<string> _fixablePackagePaths;
+    List<string> _tmpEnabledPackageNames;
+    List<string> _disabledInfoList;
+    List<string> _enabledInfoList;
     bool _cacheUpdated;
+    public bool requireFixAndRestart { get; private set; }
 
     void InitPackages()
     {
-        _errors = new StringBuilder();
+        _preDisabledInfoList = new List<string>();
+        _errorsInfoList = new List<string>();
+        _fixablePackageNames = new List<string>();
+        _fixablePackagePaths = new List<string>();
+        _tmpEnabledPackageNames = FileUtils.ReadTmpEnabledPackagesFile()
+            .Split('\n')
+            .Where(packageName => !string.IsNullOrEmpty(packageName))
+            .ToList();
         _cacheUpdated = false;
-        int enabledPackagesCount = 0;
-        int disabledPackagesCount = 0;
         string thisPackageName = this.GetPackageName();
 
         // TODO healthcheck on dir
@@ -224,8 +253,8 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
-            bool isDisabled = FileUtils.FileExists($"{path}.disabled");
-            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(fileName) : ReadEnabledPackageLicenseType(path, fileName);
+            bool isDisabled = FileUtils.DisabledFileExists(path);
+            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(path, fileName) : ReadEnabledPackageLicenseType(path, fileName);
             if(string.IsNullOrEmpty(licenseType))
             {
                 continue;
@@ -233,21 +262,18 @@ sealed class PackageLicenseFilter : ScriptBase
 
             if(!licenseTypes.ContainsKey(licenseType))
             {
-                _cacheUpdated = _packageLicenseCache.Remove(fileName);
-                _errors.AppendLine($"{fileName}: Unknown license type {licenseType}");
+                _cacheUpdated = _cacheUpdated || _packageLicenseCache.Remove(fileName);
+                _errorsInfoList.Add($"{fileName}: Unknown license type {licenseType}");
                 continue;
             }
 
-            var varPackage = new VarPackage(path, fileName, licenseTypes[licenseType], !isDisabled);
-            _varPackages.Add(varPackage);
-            if(varPackage.enabled)
+            var package = new VarPackage(path, fileName, licenseTypes[licenseType], !isDisabled);
+            if(isDisabled)
             {
-                enabledPackagesCount++;
+                _preDisabledInfoList.Add(package.displayString);
             }
-            else
-            {
-                disabledPackagesCount++;
-            }
+
+            _varPackages.Add(package);
         }
 
         if(_cacheUpdated)
@@ -255,27 +281,55 @@ sealed class PackageLicenseFilter : ScriptBase
             SyncLicenseCacheFile();
         }
 
-        var infoText = new StringBuilder();
-        infoText.Append("\n".Size(8));
-        infoText.AppendLine($"Enabled packages count: {enabledPackagesCount}".Bold());
-        infoText.AppendLine($"Disabled packages count: {disabledPackagesCount}".Bold());
-
-        if(_errors.Length > 0)
+        requireFixAndRestart = _fixablePackageNames.Count > 0;
+        if(requireFixAndRestart)
         {
-            infoText.AppendLine("Packages with errors:\n".Bold());
-            infoText.AppendLine(_errors.ToString());
-        }
+            if(_tmpEnabledPackageNames.Count > 0)
+            {
+                Loggr.Error(
+                    "License info cache is still broken :(. Something may have gone wrong during creation" +
+                    $" or deletion of {FileUtils.GetTmpEnabledFileFullPath()}, or during VAM restart.",
+                    false
+                );
+            }
 
-        filterInfoJss.val = infoText.ToString();
+            var sb = new StringBuilder();
+            sb.Append("\n".Size(8));
+            sb.Append(_fixablePackageNames.Count);
+            sb.AppendLine(
+                " disabled package(s) are missing cached license info. Click the button above to temporarily" +
+                $" enable these packages, allowing {nameof(PackageLicenseFilter)} to cache their license info.\n"
+            );
+            sb.AppendLine(
+                "The next time the plugin is initialized, these packages will be automatically added to the" +
+                " list of packages to be disabled.\n"
+            );
+            sb.AppendLine(string.Join("\n", _fixablePackageNames.ToArray()));
+            sb.AppendLine("");
+            filterInfoJss.val = sb.ToString().Color(Colors.darkRed);
+        }
+        else
+        {
+            if(_tmpEnabledPackageNames.Count > 0)
+            {
+                DisableTemporarilyEnabledPackages(_tmpEnabledPackageNames);
+                FileUtils.DeleteTmpEnabledPackagesFile();
+                UpdateInfoPanel(true);
+            }
+            else
+            {
+                UpdateInfoPanel(false);
+            }
+        }
     }
 
-    string ReadDisabledPackageLicenseType(string fileName)
+    string ReadDisabledPackageLicenseType(string path, string fileName)
     {
         if(!_packageLicenseCache.ContainsKey(fileName))
         {
-            _errors.AppendLine($"{fileName}: Disabled package's license type cannot be read from meta.json.");
+            _fixablePackagePaths.Add(path);
+            _fixablePackageNames.Add(fileName);
             return null;
-            // TODO should enable package and restart
         }
 
         return _packageLicenseCache[fileName];
@@ -288,24 +342,95 @@ sealed class PackageLicenseFilter : ScriptBase
             return _packageLicenseCache[fileName];
         }
 
-        string metaJsonPath = $"{path}:/meta.json";
-        if(!FileManagerSecure.FileExists(metaJsonPath))
+        string metaJsonPath = FileUtils.NormalizePackagePath(addonPackagesLocationJss.val, $"{path}:/meta.json");
+        if(!FileUtils.FileExists(metaJsonPath))
         {
-            _errors.AppendLine($"{fileName}: Missing meta.json");
+            _errorsInfoList.Add($"{fileName}: Missing meta.json");
             return null;
         }
 
+        const string licenseTypeKey = "licenseType";
         var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
-        if(!metaJson.HasKey("licenseType"))
+        if(!metaJson.HasKey(licenseTypeKey))
         {
-            _errors.AppendLine($"{fileName}: Missing 'licenseType' field in meta.json");
+            _errorsInfoList.Add($"{fileName}: Missing '{licenseTypeKey}' field in meta.json");
             return null;
         }
 
-        string licenseType = metaJson["licenseType"].Value;
+        string licenseType = metaJson[licenseTypeKey].Value;
         _packageLicenseCache[fileName] = licenseType;
         _cacheUpdated = true;
         return licenseType;
+    }
+
+    void UpdateInfoPanel(bool onApplyChanges)
+    {
+        var sb = new StringBuilder();
+        sb.Append("\n".Size(8));
+
+        if(onApplyChanges)
+        {
+            if(_tmpEnabledPackageNames.Count > 0)
+            {
+                sb.AppendLine(
+                    "Some initially disabled packages were temporarily enabled in order to update their license info to cache." +
+                    " These should be visible below in the list of packages to disable.\n"
+                );
+            }
+
+            bool willEnable = _enabledInfoList != null && _enabledInfoList.Count > 0;
+            if(willEnable)
+            {
+                sb.Append(_enabledInfoList.Count);
+                sb.AppendLine(" packages will be enabled:\n");
+                sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
+                sb.AppendLine("");
+            }
+
+            bool willDisable = _disabledInfoList != null && _disabledInfoList.Count > 0;
+            if(willDisable)
+            {
+                sb.Append(_disabledInfoList.Count);
+                sb.AppendLine(" packages will be disabled:\n");
+                sb.AppendLine(string.Join("\n", _disabledInfoList.ToArray()));
+                sb.AppendLine("");
+            }
+
+            AddErrorsInfo(sb);
+
+            if(!willEnable && !willDisable)
+            {
+                sb.AppendLine("No packages changed.\n");
+                AddPreDisabledInfo(sb);
+            }
+        }
+        else
+        {
+            AddErrorsInfo(sb);
+            AddPreDisabledInfo(sb);
+        }
+
+        filterInfoJss.val = sb.ToString();
+    }
+
+    void AddPreDisabledInfo(StringBuilder sb)
+    {
+        if(_preDisabledInfoList.Count > 0)
+        {
+            sb.AppendLine($"{_preDisabledInfoList.Count} packages are currently disabled:\n");
+            sb.AppendLine(string.Join("\n", _preDisabledInfoList.ToArray()));
+            sb.AppendLine("");
+        }
+    }
+
+    void AddErrorsInfo(StringBuilder sb)
+    {
+        if(_errorsInfoList.Count > 0)
+        {
+            sb.AppendLine($"{_errorsInfoList.Count} packages have errors:\n");
+            sb.AppendLine(string.Join("\n", _errorsInfoList.ToArray()));
+            sb.AppendLine("");
+        }
     }
 
     void SaveAndContinue()
@@ -316,62 +441,60 @@ sealed class PackageLicenseFilter : ScriptBase
         _mainWindow.Rebuild();
     }
 
+    void DisableTemporarilyEnabledPackages(List<string> tmpEnabledPackagePaths)
+    {
+        try
+        {
+            _disabledInfoList = new List<string>();
+            foreach(string path in tmpEnabledPackagePaths)
+            {
+                var package = _varPackages.Find(p => p.path == path);
+                if(package != null)
+                {
+                    bool disabled = package.Disable();
+                    if(disabled)
+                    {
+                        _disabledInfoList.Add(package.displayString);
+                    }
+                    else
+                    {
+                        _errorsInfoList.Add($"{package.displayString} was already disabled... OK.");
+                    }
+                }
+                else
+                {
+                    _errorsInfoList.Add($"Package with path '{path}' not found!");
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            Loggr.Error($"Error disabling temporarily enabled packages: {e.Message}");
+        }
+    }
+
     void ApplyFilter()
     {
-        int enabledPackagesCount = 0;
-        int disabledPackagesCount = 0;
-        var changedPackagesList = new StringBuilder();
+        _enabledInfoList = new List<string>();
+        _disabledInfoList = new List<string>();
 
         foreach(var package in _varPackages)
         {
             bool statusChanged = package.SyncStatus();
             if(statusChanged)
             {
-                Color color;
                 if(package.enabled)
                 {
-                    color = Colors.darkGreen;
-                    enabledPackagesCount++;
+                    _enabledInfoList.Add(package.displayString);
                 }
                 else
                 {
-                    color = Color.red;
-                    disabledPackagesCount++;
+                    _disabledInfoList.Add(package.displayString);
                 }
-
-                changedPackagesList.AppendLine($"{package.license.name.Bold().Color(color)}  {package.name}");
             }
         }
 
-        var infoText = new StringBuilder();
-        infoText.Append("\n".Size(8));
-
-        if(enabledPackagesCount > 0 && disabledPackagesCount > 0)
-        {
-            infoText.AppendLine(
-                $"{enabledPackagesCount} packages will be enabled and " +
-                $"{disabledPackagesCount} packages will be disabled." +
-                " VAM restart needed!\n"
-            );
-            infoText.AppendLine(changedPackagesList.ToString());
-        }
-        else if(enabledPackagesCount > 0)
-        {
-            infoText.AppendLine($"{enabledPackagesCount} packages will be enabled. VAM restart needed!\n");
-            infoText.AppendLine(changedPackagesList.ToString());
-        }
-        else if(disabledPackagesCount > 0)
-        {
-            infoText.AppendLine($"{disabledPackagesCount} packages will be disabled. VAM restart needed!\n");
-            infoText.AppendLine(changedPackagesList.ToString());
-        }
-        else
-        {
-            infoText.AppendLine("No packages changed.");
-        }
-
-        filterInfoJss.val = infoText.ToString();
-        // ((MainWindow) _mainWindow).SyncApplyFilterButtonText(_packagesStatusChanged);
+        UpdateInfoPanel(true);
     }
 
 #endregion

@@ -8,9 +8,15 @@ using UnityEngine;
 static class FileUtils
 {
     const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
-    public const string PREFS_FILE = "preferences.json";
-    public const string LICENSE_CACHE_FILE = "licensecache.json";
-    public const string DISABLED_EXT = "disabled";
+    const string PREFS_FILE = "preferences.json";
+    const string LICENSE_CACHE_FILE = "licensecache.json";
+    const string TMP_ENABLED_FILE = "tmp_enabled_packages.txt";
+    const string DISABLED_EXT = "disabled";
+
+    public static string GetTmpEnabledFileFullPath()
+    {
+        return $"{DATA_DIR}/{TMP_ENABLED_FILE}";
+    }
 
     public static IEnumerable<string> FindDirPaths(string rootPath, string dirName)
     {
@@ -77,6 +83,11 @@ static class FileUtils
         return result;
     }
 
+    public static string NormalizePackagePath(string addonPackagesLocation, string packagePath)
+    {
+        return packagePath.Replace(addonPackagesLocation, "AddonPackages/");
+    }
+
     public static JSONClass ReadLicenseCacheJSON()
     {
         EnsureDataDirExists();
@@ -99,6 +110,25 @@ static class FileUtils
     {
         EnsureDataDirExists();
         WriteJSON(jc, $"{DATA_DIR}/{PREFS_FILE}", confirmCallback);
+    }
+
+    public static string ReadTmpEnabledPackagesFile()
+    {
+        EnsureDataDirExists();
+        string path = GetTmpEnabledFileFullPath();
+        return FileManagerSecure.FileExists(path) ? FileManagerSecure.ReadAllText(path) : "";
+
+    }
+
+    public static void WriteTmpEnabledPackagesFile(string text)
+    {
+        EnsureDataDirExists();
+        FileManagerSecure.WriteAllText(GetTmpEnabledFileFullPath(), text);
+    }
+
+    public static void DeleteTmpEnabledPackagesFile()
+    {
+        FileManagerSecure.DeleteFile(GetTmpEnabledFileFullPath());
     }
 
     public static JSONClass ReadJSON(string path)
@@ -129,14 +159,20 @@ static class FileUtils
         return FileManagerSecure.FileExists(path);
     }
 
-    public static void DeleteDisabledFile(string addonPackagePath)
+    public static bool DisabledFileExists(string packagePath)
     {
-        FileManagerSecure.DeleteFile($"{addonPackagePath}.{DISABLED_EXT}");
+        return FileExists($"{packagePath}.{DISABLED_EXT}");
     }
 
-    public static void CreateDisabledFile(string addonPackagePath)
+    public static void DeleteDisabledFile(string packagePath)
     {
-        FileManagerSecure.WriteAllText($"{addonPackagePath}.{DISABLED_EXT}", string.Empty);
+        Debug.Log($"deleting disabled file: {packagePath}.{DISABLED_EXT}");
+        FileManagerSecure.DeleteFile($"{packagePath}.{DISABLED_EXT}");
+    }
+
+    public static void CreateDisabledFile(string packagePath)
+    {
+        FileManagerSecure.WriteAllText($"{packagePath}.{DISABLED_EXT}", string.Empty);
     }
 
     static void EnsureDataDirExists()

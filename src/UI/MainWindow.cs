@@ -64,6 +64,7 @@ sealed class MainWindow : WindowBase
             button.SetFocusedColor(Colors.lightGray);
             button.height = 100;
             action.RegisterButton(button);
+            button.SetActiveStyle(!PackageLicenseFilter.script.requireFixAndRestart, true);
             return button;
         });
     }
@@ -107,14 +108,28 @@ sealed class MainWindow : WindowBase
 
         AddSpacer(245, rightSide);
 
-        AddElement(() =>
+        if(PackageLicenseFilter.script.requireFixAndRestart)
         {
-            var action = PackageLicenseFilter.script.restartVamAction;
-            var button = script.CreateButton(action.name, rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            action.RegisterButton(button);
-            return button;
-        });
+            AddElement(() =>
+            {
+                var action = PackageLicenseFilter.script.fixAndRestartAction;
+                var button = script.CreateButton(action.name, rightSide);
+                button.SetFocusedColor(Colors.lightGray);
+                action.RegisterButton(button);
+                return button;
+            });
+        }
+        else
+        {
+            AddElement(() =>
+            {
+                var action = PackageLicenseFilter.script.restartVamAction;
+                var button = script.CreateButton(action.name, rightSide);
+                button.SetFocusedColor(Colors.lightGray);
+                action.RegisterButton(button);
+                return button;
+            });
+        }
 
         AddVersionTextField();
     }
