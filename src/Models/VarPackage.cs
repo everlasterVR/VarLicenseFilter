@@ -5,32 +5,27 @@ sealed class VarPackage
 {
     public string path { get; }
     public string name { get; }
-    public string license { get; }
-    public bool status { get; private set; }
-    public bool originalStatus { get; }
+    public License license { get; }
+    public bool enabled { get; private set; }
+    public bool initialEnabled { get; }
 
     readonly string _disabledFilePath;
 
-    public VarPackage(string path, string name, string license, bool status, string addonPackagesDirPath)
+    public VarPackage(string path, string name, License license, string addonPackagesDirPath)
     {
         this.path = path;
         this.name = name;
         this.license = license;
-        this.status = status;
-        originalStatus = status;
+        SyncStatus();
+        initialEnabled = enabled;
         _disabledFilePath = Regex.Replace(path, "^AddonPackages/", addonPackagesDirPath) + FileUtils.DISABLED_EXT;
     }
 
-    public bool IsDirty()
-    {
-        return status != originalStatus;
-    }
-
     /* See VarPackage Enabled method*/
-    public void SetStatus(bool value)
+    public bool SyncStatus()
     {
-        status = value;
-        if(status)
+        enabled = license.enabledJsb.val;
+        if(enabled)
         {
             FileManagerSecure.DeleteFile(_disabledFilePath);
         }
@@ -38,5 +33,7 @@ sealed class VarPackage
         {
             FileManagerSecure.WriteAllText(_disabledFilePath, string.Empty);
         }
+
+        return enabled != initialEnabled;
     }
 }

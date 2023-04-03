@@ -30,20 +30,20 @@ sealed class MainWindow : WindowBase
 
     void BuildLeftSide(bool rightSide = false)
     {
-        var list = PackageLicenseFilter.script.licenseTypeEnabledJsons.Values.ToList();
+        var list = PackageLicenseFilter.script.licenseTypes.Values.ToList();
         int leftCount = 0;
         int rightCount = 0;
         for(int i = 0; i < list.Count; i++)
         {
-            var jsb = list[i];
+            var license = list[i];
             if(i < list.Count / 2)
             {
-                AddLicenseToggle(jsb, 0, -65 * leftCount);
+                AddLicenseToggle(license, 0, -65 * leftCount);
                 leftCount++;
             }
             else
             {
-                AddLicenseToggle(jsb, 270, -65 * rightCount);
+                AddLicenseToggle(license, 270, -65 * rightCount);
                 rightCount++;
             }
         }
@@ -53,29 +53,23 @@ sealed class MainWindow : WindowBase
         AddHeaderTextField("CC auto-selection", rightSide);
         AddElement(() =>
         {
-            // TODO
-            var button = script.CreateButton("Allows commercial use only", rightSide);
+            var button = script.CreateButton("Allows commercial use", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.height = 60;
-            button.button.onClick.AddListener(SelectAllowsCommercialUseOnly);
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse));
             return button;
         });
         AddElement(() =>
         {
-            // TODO
-            var button = script.CreateButton("Allows modification only", rightSide);
+            var button = script.CreateButton("Allows modification", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.height = 60;
-            button.button.onClick.AddListener(SelectAllowsDerivativesOnly);
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsDerivatives));
             return button;
         });
         AddElement(() =>
         {
-            // TODO
-            var button = script.CreateButton("All CC", rightSide);
+            var button = script.CreateButton("Select all CC", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.height = 60;
-            button.button.onClick.AddListener(SelectAllCC);
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.isCc));
             return button;
         });
     }
@@ -121,7 +115,7 @@ sealed class MainWindow : WindowBase
         PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
     }
 
-    void AddLicenseToggle(JSONStorableBool jsb, float posX, float posY)
+    void AddLicenseToggle(License license, float posX, float posY)
     {
         AddElement(() =>
         {
@@ -132,53 +126,21 @@ sealed class MainWindow : WindowBase
             rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
             rectTransform.sizeDelta = new Vector2(-820, 50);
             var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
-            toggle.label = jsb.name;
+            toggle.label = license.name;
             toggle.SetFocusedColor(Colors.lightGray);
-            PackageLicenseFilter.script.AddToggleToJsb(toggle, jsb);
+            PackageLicenseFilter.script.AddToggleToJsb(toggle, license.enabledJsb);
             return toggle;
         });
     }
 
-    static void SelectAllowsCommercialUseOnly()
-    {
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["FC"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-SA"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-ND"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC"].val = false;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-SA"].val = false;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-ND"].val = false;
-        DisableNonCC();
-    }
+    delegate bool LicenseFilter(License license);
 
-    static void SelectAllowsDerivativesOnly()
+    static void SelectLicenseTypes(LicenseFilter filter)
     {
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["FC"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-SA"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-ND"].val = false;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-SA"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-ND"].val = false;
-        DisableNonCC();
-    }
-
-    static void SelectAllCC()
-    {
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["FC"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-SA"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-ND"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-SA"].val = true;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["CC BY-NC-ND"].val = true;
-        DisableNonCC();
-    }
-
-    static void DisableNonCC()
-    {
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["PC"].val = false;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["PC EA"].val = false;
-        PackageLicenseFilter.script.licenseTypeEnabledJsons["Questionable"].val = false;
+        foreach(var kvp in PackageLicenseFilter.script.licenseTypes)
+        {
+            var license = kvp.Value;
+            license.enabledJsb.val = filter(license);
+        }
     }
 }
