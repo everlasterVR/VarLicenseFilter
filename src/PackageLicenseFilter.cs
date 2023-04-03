@@ -102,12 +102,30 @@ sealed class PackageLicenseFilter : ScriptBase
 
         try
         {
+            InitBindings(); // Might already be setup in OnBindingsListRequested.
+            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
+            initialized = true;
+        }
+        catch(Exception e)
+        {
+            FailInitWithError($"Init error: {e}");
+        }
+    }
+
+    bool _lateInitDone;
+
+    protected override Action OnUIEnabled()
+    {
+        return () =>
+        {
+            if(_lateInitDone)
+            {
+                return;
+            }
+
             SetupStorables();
             ReadLicenseCacheFromFile();
             ReadUserPreferencesFromFile();
-            InitBindings(); // Might already be setup in OnBindingsListRequested.
-            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
-
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
             if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
@@ -121,12 +139,8 @@ sealed class PackageLicenseFilter : ScriptBase
                 _mainWindow.Rebuild();
             }
 
-            initialized = true;
-        }
-        catch(Exception e)
-        {
-            FailInitWithError($"Init error: {e}");
-        }
+            _lateInitDone = true;
+        };
     }
 
     void FindAddonPackagesDirPaths()
