@@ -451,7 +451,7 @@ sealed class PackageLicenseFilter : ScriptBase
             bool willEnable = _enabledInfoList != null && _enabledInfoList.Count > 0;
             if(willEnable)
             {
-                sb.AppendLine($"{_enabledInfoList.Count}/{_preDisabledInfoList.Count} package(s) will be enabled:\n");
+                sb.AppendLine($"{_enabledInfoList.Count} package(s) will be enabled:\n");
                 sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
                 sb.AppendLine("");
             }

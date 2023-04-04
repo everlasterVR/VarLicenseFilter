@@ -17,7 +17,7 @@
         this.path = path;
         this.fileName = fileName;
         this.license = license;
-        displayString = $"[{license.name}]  {fileName}";
+        displayString = $"[{license.name}] {fileName}";
         _initialEnabled = enabled;
         this.enabled = _initialEnabled;
     }

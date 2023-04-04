@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 
 sealed class MainWindow : WindowBase
 {
@@ -78,7 +77,7 @@ sealed class MainWindow : WindowBase
     {
         AddElement(() =>
         {
-            var textField = CreateHeaderTextField("\n".Size(12) + "CC auto-selection", 30, 50, rightSide);
+            var textField = CreateHeaderTextField("\n".Size(12) + "Auto-selection", 30, 50, rightSide);
             return textField;
         });
 
@@ -86,28 +85,28 @@ sealed class MainWindow : WindowBase
         {
             var button = script.CreateButton("Select all", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectCCLicenseTypes(license => true));
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => true));
             return button;
         });
         AddElement(() =>
         {
             var button = script.CreateButton("Allows commercial use and modification", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectCCLicenseTypes(license => license.allowsCommercialUse && license.allowsDerivatives));
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse && license.allowsDerivatives));
             return button;
         });
         AddElement(() =>
         {
             var button = script.CreateButton("Allows commercial use", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectCCLicenseTypes(license => license.allowsCommercialUse));
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse));
             return button;
         });
         AddElement(() =>
         {
             var button = script.CreateButton("Allows modification", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectCCLicenseTypes(license => license.allowsDerivatives));
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsDerivatives));
             return button;
         });
 
@@ -196,18 +195,17 @@ sealed class MainWindow : WindowBase
         {
             bool active = PackageLicenseFilter.script.requireRestart;
             button.SetActiveStyle(active, true);
-            Debug.Log(button.buttonColor);
             button.buttonColor = active ? Colors.buttonRed : Colors.buttonGray;
         }
     }
 
     delegate bool LicenseFilter(License license);
 
-    static void SelectCCLicenseTypes(LicenseFilter filter)
+    static void SelectLicenseTypes(LicenseFilter filter)
     {
-        var ccLicenseTypes = PackageLicenseFilter.script.licenseTypes.Values.Where(license => license.isCc);
-        foreach(var license in ccLicenseTypes)
+        foreach(var kvp in PackageLicenseFilter.script.licenseTypes)
         {
+            var license = kvp.Value;
             license.enabledJsb.val = filter(license);
         }
     }
