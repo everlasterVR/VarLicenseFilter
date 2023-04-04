@@ -10,7 +10,7 @@
     public bool changed { get; private set; }
     public bool forceEnabled { get; set; }
     public bool forceDisabled { get; set; }
-    public bool isDefaultSessionPluginPackage { get; }
+    public bool isDefaultSessionPluginPackage { get; set; }
 
     public VarPackage(
         string path,

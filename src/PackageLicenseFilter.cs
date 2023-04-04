@@ -62,7 +62,6 @@ sealed class PackageLicenseFilter : ScriptBase
     Dictionary<string, string> _packageLicenseCache;
     HashSet<string> _alwaysEnabledPackages;
     HashSet<string> _alwaysDisabledPackages;
-    HashSet<string> _defaultSessionPluginPackages;
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
     public readonly Dictionary<string, License> licenseTypes = new Dictionary<string, License>
     {
@@ -134,6 +133,17 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             if(_lateInitDone)
             {
+                if(!string.IsNullOrEmpty(addonPackagesLocationJss.val))
+                {
+                    bool syncNeeded = RefreshSessionPluginPackages();
+                    if(syncNeeded)
+                    {
+                        UpdateAlwaysEnabledListInfoText();
+                        UpdateAlwaysDisabledListInfoText();
+                        SyncPackageStatuses();
+                    }
+                }
+
                 return;
             }
 
@@ -142,7 +152,6 @@ sealed class PackageLicenseFilter : ScriptBase
             ReadLicenseCacheFromFile();
             _alwaysEnabledPackages = new HashSet<string>(FileUtils.ReadAlwaysEnabledCache());
             _alwaysDisabledPackages = new HashSet<string>(FileUtils.ReadAlwaysDisabledCache());
-            _defaultSessionPluginPackages = FindPackageFilenamesFromDefaultSessionPluginsJson();
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
             if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
@@ -158,6 +167,40 @@ sealed class PackageLicenseFilter : ScriptBase
 
             _lateInitDone = true;
         };
+    }
+
+    /* In case session plugin defaults were changed since Init */
+    bool RefreshSessionPluginPackages()
+    {
+        _defaultSessionPluginPackages = FindPackageFilenamesFromDefaultSessionPluginsJson();
+        bool syncNeeded = false;
+        foreach(string filename in _defaultSessionPluginPackages)
+        {
+            var package = _varPackages.FirstOrDefault(item => item.filename == filename);
+            if(package == null)
+            {
+                Debug.Log($"Package {filename} not found?");
+                continue;
+            }
+            package.isDefaultSessionPluginPackage = true;
+
+            if(alwaysEnableDefaultSessionPluginsJsb.val)
+            {
+                syncNeeded = true;
+                _alwaysEnabledPackages.Add(package.filename);
+                _alwaysDisabledPackages.Remove(package.filename);
+                package.forceEnabled = true;
+                package.forceDisabled = false;
+
+                if(package == _selectedPackage)
+                {
+                    alwaysEnableSelectedJsb.valNoCallback = package.forceEnabled;
+                    alwaysDisableSelectedJsb.valNoCallback = package.forceDisabled;
+                }
+            }
+        }
+
+        return syncNeeded;
     }
 
     void FindAddonPackagesDirPaths()
@@ -299,6 +342,7 @@ sealed class PackageLicenseFilter : ScriptBase
     List<string> _fixablePackageNames;
     List<string> _fixablePackagePaths;
     List<string> _tmpEnabledPackageNames;
+    HashSet<string> _defaultSessionPluginPackages;
     List<string> _disabledInfoList;
     List<string> _enabledInfoList;
     bool _cacheUpdated;
@@ -314,6 +358,7 @@ sealed class PackageLicenseFilter : ScriptBase
         _tmpEnabledPackageNames = FileUtils.ReadTmpEnabledPackagesFile()
             .Where(packageName => !string.IsNullOrEmpty(packageName))
             .ToList();
+        _defaultSessionPluginPackages = FindPackageFilenamesFromDefaultSessionPluginsJson();
         var packageJsscOptions = new List<string>();
         var packageJsscDisplayOptions = new List<string>();
         _cacheUpdated = false;
@@ -902,8 +947,6 @@ sealed class PackageLicenseFilter : ScriptBase
 
         try
         {
-            // TODO restore filtered statuses and refresh packages
-            // ApplyFilter();
         }
         catch(Exception e)
         {
