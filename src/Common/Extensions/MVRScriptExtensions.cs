@@ -51,6 +51,11 @@ static partial class MVRScriptExtensions
         return UnityEngine.Object.Instantiate(script.manager.configurablePopupPrefab, parent, false);
     }
 
+    public static Transform InstantiateFilterablePopup(this MVRScript script, Transform parent = null)
+    {
+        return UnityEngine.Object.Instantiate(script.manager.configurableFilterablePopupPrefab, parent, false);
+    }
+
     public static Transform InstantiateColorPicker(this MVRScript script, Transform parent = null)
     {
         return UnityEngine.Object.Instantiate(script.manager.configurableColorPickerPrefab, parent, false);

@@ -5,6 +5,7 @@ sealed class MainWindow : WindowBase
 {
     public MainWindow() : base(PackageLicenseFilter.script, nameof(MainWindow))
     {
+        nestedWindows.Add(new PackagesWindow(OnReturn));
     }
 
     protected override void OnBuild()
@@ -17,7 +18,7 @@ sealed class MainWindow : WindowBase
             var rectTransform = fieldTransform.GetComponent<RectTransform>();
             rectTransform.pivot = new Vector2(0, 0);
             rectTransform.anchoredPosition = new Vector2(10, -1220);
-            rectTransform.sizeDelta = new Vector2(-15, 560);
+            rectTransform.sizeDelta = new Vector2(-15, 685);
             var textField = fieldTransform.GetComponent<UIDynamicTextField>();
             textField.text = PackageLicenseFilter.script.filterInfoJss.val;
             PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
@@ -26,6 +27,7 @@ sealed class MainWindow : WindowBase
             return textField;
         });
         BuildRightSide();
+        RefreshRestartButton();
     }
 
     void BuildLeftSide(bool rightSide = false)
@@ -48,22 +50,25 @@ sealed class MainWindow : WindowBase
             }
         }
 
-        AddSpacer(455, rightSide);
+        AddSpacer(330, rightSide);
 
         AddElement(() =>
         {
-            var toggle = script.CreateToggle(new JSONStorableBool("Exclude default session plugins", true), rightSide);
-            toggle.SetFocusedColor(Colors.lightGray);
-            return toggle;
+            var action = PackageLicenseFilter.script.resetStatusesAction;
+            var button = script.CreateButton(action.name, rightSide);
+            action.RegisterButton(button);
+            button.SetFocusedColor(Colors.lightGray);
+            button.SetActiveStyle(!PackageLicenseFilter.script.requireFixAndRestart, true);
+            return button;
         });
 
         AddElement(() =>
         {
             var action = PackageLicenseFilter.script.applyFilterAction;
             var button = script.CreateButton(action.name, rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.height = 100;
             action.RegisterButton(button);
+            button.height = 100;
+            button.SetFocusedColor(Colors.lightGray);
             button.SetActiveStyle(!PackageLicenseFilter.script.requireFixAndRestart, true);
             return button;
         });
@@ -106,7 +111,28 @@ sealed class MainWindow : WindowBase
             return button;
         });
 
-        AddSpacer(245, rightSide);
+        AddSpacer(5, rightSide);
+
+        AddElement(() =>
+        {
+            var button = script.CreateButton("Manage individual packages", rightSide);
+            if(PackageLicenseFilter.script.requireFixAndRestart)
+            {
+                button.SetActiveStyle(false, true);
+            }
+            else
+            {
+                var nestedWindow = nestedWindows.Find(window => window.GetId() == nameof(PackagesWindow));
+                button.AddListener(() =>
+                {
+                    ClearSelf();
+                    activeNestedWindow = nestedWindow;
+                    activeNestedWindow.Rebuild();
+                });
+            }
+
+            return button;
+        });
 
         if(PackageLicenseFilter.script.requireFixAndRestart)
         {
@@ -114,8 +140,9 @@ sealed class MainWindow : WindowBase
             AddElement(action.name, () =>
             {
                 var button = script.CreateButton(action.name, rightSide);
-                button.SetFocusedColor(Colors.lightGray);
                 action.RegisterButton(button);
+                button.height = 100;
+                button.SetFocusedColor(Colors.lightGray);
                 return button;
             });
         }
@@ -125,8 +152,9 @@ sealed class MainWindow : WindowBase
             AddElement(action.name, () =>
             {
                 var button = script.CreateButton(action.name, rightSide);
-                button.SetFocusedColor(Colors.lightGray);
                 action.RegisterButton(button);
+                button.height = 100;
+                button.SetFocusedColor(Colors.lightGray);
                 button.SetActiveStyle(false, true);
                 return button;
             });
@@ -163,10 +191,13 @@ sealed class MainWindow : WindowBase
 
     public void RefreshRestartButton()
     {
-        var element = GetElement(PackageLicenseFilter.script.restartVamAction.name);
-        if(element)
+        var button = GetElementAs<UIDynamicButton>(PackageLicenseFilter.script.restartVamAction.name);
+        if(button)
         {
-            element.SetActiveStyle(PackageLicenseFilter.script.requireRestart, true);
+            bool active = PackageLicenseFilter.script.requireRestart;
+            button.SetActiveStyle(active, true);
+            Debug.Log(button.buttonColor);
+            button.buttonColor = active ? Colors.buttonRed : Colors.buttonGray;
         }
     }
 

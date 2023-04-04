@@ -79,9 +79,20 @@ sealed class PackageLicenseFilter : ScriptBase
     public JSONStorableString addonPackagesLocationJss { get; private set; }
     public JSONStorableAction saveAndContinueAction { get; private set; }
     public JSONStorableString filterInfoJss { get; private set; }
+    public JSONStorableBool alwaysEnableSelectedJsb { get; private set; }
+    public JSONStorableBool alwaysDisableSelectedJsb { get; private set; }
+    public JSONStorableString alwaysEnabledListInfoJss { get; private set; }
+    public JSONStorableString alwaysDisabledListInfoJss { get; private set; }
     public JSONStorableAction applyFilterAction { get; private set; }
+    public JSONStorableAction resetStatusesAction { get; private set; }
     public JSONStorableAction fixAndRestartAction { get; private set; }
     public JSONStorableAction restartVamAction { get; private set; }
+    public JSONStorableBool alwaysEnableDefaultSessionPluginsJsb { get; private set; }
+    public JSONStorableStringChooser packageJssc { get; private set; }
+
+    VarPackage _selectedPackage;
+    bool _applyLicenseFilter;
+
     Bindings bindings { get; set; }
 
     IWindow _mainWindow;
@@ -156,7 +167,25 @@ sealed class PackageLicenseFilter : ScriptBase
         addonPackagesLocationJss = new JSONStorableString("AddonPackages location", "");
         saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
         filterInfoJss = new JSONStorableString("Filter info", "");
-        applyFilterAction = new JSONStorableAction("Apply filter", ApplyFilter);
+        alwaysEnableSelectedJsb = new JSONStorableBool("Always enable selected", false, OnToggleAlwaysEnabled);
+        alwaysDisableSelectedJsb = new JSONStorableBool("Always disable selected", false, OnToggleAlwaysDisabled);
+        alwaysEnabledListInfoJss = new JSONStorableString("Always enabled list info", "");
+        alwaysDisabledListInfoJss = new JSONStorableString("Always disabled list info", "");
+        applyFilterAction = new JSONStorableAction("Apply license filter to packages", () =>
+        {
+            _applyLicenseFilter = true;
+            SyncPackageStatuses();
+        });
+        resetStatusesAction = new JSONStorableAction("Reset license filter", () =>
+        {
+            _applyLicenseFilter = false;
+            foreach(var kvp in licenseTypes)
+            {
+                kvp.Value.enabledJsb.val = kvp.Value.enabledJsb.defaultVal;
+            }
+
+            SyncPackageStatuses();
+        });
         fixAndRestartAction = new JSONStorableAction("Fix cache and restart VAM", () =>
         {
             foreach(string path in _fixablePackagePaths)
@@ -188,6 +217,8 @@ sealed class PackageLicenseFilter : ScriptBase
 
             RestartVAM();
         });
+        alwaysEnableDefaultSessionPluginsJsb = new JSONStorableBool("Always enable default session plugin packages", true);
+        packageJssc = new JSONStorableStringChooser("Package", new List<string>(), "Select...".Italic(), "Package", OnPackageSelected);
     }
 
     void RestartVAM()
@@ -270,6 +301,8 @@ sealed class PackageLicenseFilter : ScriptBase
             .Split('\n')
             .Where(packageName => !string.IsNullOrEmpty(packageName))
             .ToList();
+        var packageJsscOptions = new List<string>();
+        var packageJsscDisplayOptions = new List<string>();
         _cacheUpdated = false;
         string thisPackageName = this.GetPackageName();
 
@@ -299,6 +332,9 @@ sealed class PackageLicenseFilter : ScriptBase
             }
 
             var package = new VarPackage(path, fileName, licenseTypes[licenseType], !isDisabled);
+            packageJsscOptions.Add(package.fileName);
+            packageJsscDisplayOptions.Add(package.displayString);
+
             if(isDisabled)
             {
                 _preDisabledInfoList.Add(package.displayString);
@@ -306,6 +342,9 @@ sealed class PackageLicenseFilter : ScriptBase
 
             _varPackages.Add(package);
         }
+
+        packageJssc.choices = packageJsscOptions;
+        packageJssc.displayChoices = packageJsscDisplayOptions;
 
         if(_cacheUpdated)
         {
@@ -412,8 +451,7 @@ sealed class PackageLicenseFilter : ScriptBase
             bool willEnable = _enabledInfoList != null && _enabledInfoList.Count > 0;
             if(willEnable)
             {
-                sb.Append(_enabledInfoList.Count);
-                sb.AppendLine(" package(s) will be enabled:\n");
+                sb.AppendLine($"{_enabledInfoList.Count}/{_preDisabledInfoList.Count} package(s) will be enabled:\n");
                 sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
                 sb.AppendLine("");
             }
@@ -421,8 +459,13 @@ sealed class PackageLicenseFilter : ScriptBase
             bool willDisable = _disabledInfoList != null && _disabledInfoList.Count > 0;
             if(willDisable)
             {
-                sb.Append(_disabledInfoList.Count);
-                sb.AppendLine(" package(s) will be disabled:\n");
+                sb.Append($"{_disabledInfoList.Count} package(s) will be disabled");
+                if(_preDisabledInfoList.Count > 0)
+                {
+                    sb.Append($" (in addition to {_preDisabledInfoList.Count} already disabled)");
+                }
+
+                sb.AppendLine(":\n");
                 sb.AppendLine(string.Join("\n", _disabledInfoList.ToArray()));
                 sb.AppendLine("");
             }
@@ -431,7 +474,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
             if(!willEnable && !willDisable)
             {
-                sb.AppendLine("No packages changed.\n");
+                sb.AppendLine("No changes.\n");
                 AddPreDisabledInfo(sb);
             }
         }
@@ -513,7 +556,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
     }
 
-    void ApplyFilter()
+    void SyncPackageStatuses()
     {
         requireRestart = false;
         _enabledInfoList = new List<string>();
@@ -521,7 +564,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
         foreach(var package in _varPackages)
         {
-            package.SyncEnabled();
+            package.SyncEnabled(_applyLicenseFilter);
             if(package.changed)
             {
                 requireRestart = true;
@@ -538,6 +581,128 @@ sealed class PackageLicenseFilter : ScriptBase
 
         ((MainWindow) _mainWindow).RefreshRestartButton();
         UpdateInfoPanelText(true);
+    }
+
+    void OnToggleAlwaysEnabled(bool value)
+    {
+        if(_selectedPackage.forceEnabled == value)
+        {
+            return;
+        }
+
+        _selectedPackage.forceEnabled = value;
+        UpdateAlwaysEnabledListInfoText();
+
+        if(value)
+        {
+            alwaysDisableSelectedJsb.valNoCallback = false;
+            if(_selectedPackage.forceDisabled)
+            {
+                _selectedPackage.forceDisabled = false;
+                UpdateAlwaysDisabledListInfoText();
+            }
+        }
+
+        SyncPackageStatuses();
+    }
+
+    void OnToggleAlwaysDisabled(bool value)
+    {
+        if(_selectedPackage.forceDisabled == value)
+        {
+            return;
+        }
+
+        Debug.Log($"{_selectedPackage.fileName}: OnToggleAlwaysDisabled: {value}");
+
+        _selectedPackage.forceDisabled = value;
+        UpdateAlwaysDisabledListInfoText();
+
+        if(value)
+        {
+            alwaysEnableSelectedJsb.valNoCallback = false;
+            if(_selectedPackage.forceEnabled)
+            {
+                _selectedPackage.forceEnabled = false;
+                UpdateAlwaysEnabledListInfoText();
+            }
+        }
+
+        SyncPackageStatuses();
+    }
+
+    void OnPackageSelected(string value)
+    {
+        _selectedPackage = FindPackage(packageJssc.val);
+        if(_selectedPackage != null)
+        {
+            alwaysEnableSelectedJsb.valNoCallback = _selectedPackage.forceEnabled;
+            alwaysDisableSelectedJsb.valNoCallback = _selectedPackage.forceDisabled;
+        }
+    }
+
+    public void UpdateAlwaysEnabledListInfoText()
+    {
+        var sb = new StringBuilder();
+        sb.Append("\n".Size(8));
+
+        var list = new List<string>();
+        foreach(var package in _varPackages)
+        {
+            if(package.forceEnabled)
+            {
+                list.Add(package.fileName);
+            }
+        }
+
+        if(list.Count > 0)
+        {
+            sb.AppendLine(string.Join("\n", list.ToArray()));
+            sb.AppendLine("");
+        }
+
+        alwaysEnabledListInfoJss.val = sb.ToString();
+    }
+
+    public void UpdateAlwaysDisabledListInfoText()
+    {
+        var sb = new StringBuilder();
+        sb.Append("\n".Size(8));
+
+        var list = new List<string>();
+        foreach(var package in _varPackages)
+        {
+            if(package.forceDisabled)
+            {
+                list.Add(package.fileName);
+            }
+        }
+
+        if(list.Count > 0)
+        {
+            sb.AppendLine(string.Join("\n", list.ToArray()));
+            sb.AppendLine("");
+        }
+
+        alwaysDisabledListInfoJss.val = sb.ToString();
+    }
+
+    VarPackage FindPackage(string fileName)
+    {
+        if(string.IsNullOrEmpty(fileName) || fileName == packageJssc.defaultVal)
+        {
+            return null;
+        }
+
+        try
+        {
+            return _varPackages.Find(package => package.fileName == fileName);
+        }
+        catch(Exception e)
+        {
+            Loggr.Error($"Error finding package {fileName}: {e}");
+            return null;
+        }
     }
 
 #endregion
@@ -614,6 +779,12 @@ sealed class PackageLicenseFilter : ScriptBase
         sliderToJSONStorableFloat.Add(slider, jsf);
     }
 
+    public void AddPopupToJssc(UIDynamicPopup uiDynamicPopup, JSONStorableStringChooser jssc)
+    {
+        jssc.popup = uiDynamicPopup.popup;
+        popupToJSONStorableStringChooser.Add(uiDynamicPopup, jssc);
+    }
+
     void OnEnable()
     {
         if(initialized != true)
@@ -624,7 +795,7 @@ sealed class PackageLicenseFilter : ScriptBase
         try
         {
             // TODO restore filtered statuses and refresh packages
-            ApplyFilter();
+            // ApplyFilter();
         }
         catch(Exception e)
         {
