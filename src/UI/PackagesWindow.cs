@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 sealed class PackagesWindow : WindowBase
 {
@@ -48,27 +49,39 @@ sealed class PackagesWindow : WindowBase
     void BuildLeftSide(bool rightSide = false)
     {
         AddInfoTextField("Packages that are always enabled or disabled are ignored when filtering\npackages by license type.", rightSide);
+
         AddSpacer(80, rightSide);
-        var alwaysEnableJsb = PackageLicenseFilter.script.alwaysEnableSelectedJsb;
-        AddElement(alwaysEnableJsb.name, () =>
-        {
-            var toggle = script.CreateToggle(alwaysEnableJsb, rightSide);
-            return toggle;
-        });
+        AddElement(PackageLicenseFilter.script.alwaysEnableSelectedJsb.name, () =>
+            script.CreateToggle(PackageLicenseFilter.script.alwaysEnableSelectedJsb, rightSide));
+
         AddElement(() =>
         {
             var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS ENABLED PACKAGES".Bold(), 26, 40, rightSide);
             textField.UItext.alignment = TextAnchor.LowerLeft;
             textField.textColor = new Color(0, 0.33f, 0);
+
             return textField;
         });
+
         AddElement(() =>
         {
             var textField = script.CreateTextField(PackageLicenseFilter.script.alwaysEnabledListInfoJss, rightSide);
             textField.height = 376;
             textField.UItext.fontSize = 26;
+            textField.UItext.alignment = TextAnchor.UpperLeft;
+            textField.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var scrollView = textField.transform.Find("Scroll View");
+            var scrollRect = scrollView.GetComponent<ScrollRect>();
+            scrollRect.horizontal = true;
+            scrollRect.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
             return textField;
         });
+    }
+
+    void UpdateScrollbarSize(ScrollRect scrollRect)
+    {
+        Canvas.ForceUpdateCanvases(); // Force an update to ensure the content size is calculated correctly
+        scrollRect.horizontalScrollbar.size = Mathf.Clamp01(scrollRect.viewport.rect.width / scrollRect.content.rect.width);
     }
 
     void BuildRightSide(bool rightSide = true)
@@ -81,13 +94,11 @@ sealed class PackagesWindow : WindowBase
             toggle.label = "Always enable default session\nplugin packages";
             return toggle;
         });
+
         AddSpacer(100, rightSide);
-        var alwaysDisableJsb = PackageLicenseFilter.script.alwaysDisableSelectedJsb;
-        AddElement(alwaysDisableJsb.name, () =>
-        {
-            var toggle = script.CreateToggle(alwaysDisableJsb, rightSide);
-            return toggle;
-        });
+        AddElement(PackageLicenseFilter.script.alwaysDisableSelectedJsb.name, () =>
+            script.CreateToggle(PackageLicenseFilter.script.alwaysDisableSelectedJsb, rightSide));
+
         AddElement(() =>
         {
             var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS DISABLED PACKAGES".Bold(), 26, 40, rightSide);
@@ -95,12 +106,18 @@ sealed class PackagesWindow : WindowBase
             textField.textColor = new Color(0.33f, 0, 0);
             return textField;
         });
+
         AddElement(() =>
         {
             var textField = script.CreateTextField(PackageLicenseFilter.script.alwaysDisabledListInfoJss, rightSide);
             textField.height = 376;
-            textField.UItext.alignment = TextAnchor.LowerLeft;
             textField.UItext.fontSize = 26;
+            textField.UItext.alignment = TextAnchor.UpperLeft;
+            textField.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var scrollView = textField.transform.Find("Scroll View");
+            var scrollRect = scrollView.GetComponent<ScrollRect>();
+            scrollRect.horizontal = true;
+            scrollRect.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
             return textField;
         });
     }

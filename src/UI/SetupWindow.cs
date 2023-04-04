@@ -32,7 +32,7 @@ sealed class SetupWindow : WindowBase
         var paths = PackageLicenseFilter.script.addonPackagesDirPaths;
         if(paths.Count > 0)
         {
-            BuildOptionsList(paths);
+            BuildSection(paths);
         }
         else
         {
@@ -55,7 +55,7 @@ sealed class SetupWindow : WindowBase
         Refresh();
     }
 
-    void BuildOptionsList(List<string> paths)
+    void BuildSection(List<string> paths)
     {
         for(int i = 0; i < paths.Count; i++)
         {

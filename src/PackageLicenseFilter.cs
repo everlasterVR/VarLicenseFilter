@@ -62,6 +62,7 @@ sealed class PackageLicenseFilter : ScriptBase
     Dictionary<string, string> _packageLicenseCache;
     HashSet<string> _alwaysEnabledPackages;
     HashSet<string> _alwaysDisabledPackages;
+    HashSet<string> _defaultSessionPluginPackages;
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
     public readonly Dictionary<string, License> licenseTypes = new Dictionary<string, License>
     {
@@ -137,10 +138,11 @@ sealed class PackageLicenseFilter : ScriptBase
             }
 
             SetupStorables();
+            ReadUserPreferencesFromFile();
             ReadLicenseCacheFromFile();
             _alwaysEnabledPackages = new HashSet<string>(FileUtils.ReadAlwaysEnabledCache());
             _alwaysDisabledPackages = new HashSet<string>(FileUtils.ReadAlwaysDisabledCache());
-            ReadUserPreferencesFromFile();
+            _defaultSessionPluginPackages = FindPackageFilenamesFromDefaultSessionPluginsJson();
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
             if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
@@ -175,7 +177,7 @@ sealed class PackageLicenseFilter : ScriptBase
         alwaysDisableSelectedJsb = new JSONStorableBool("Always disable selected", false, OnToggleAlwaysDisabled);
         alwaysEnabledListInfoJss = new JSONStorableString("Always enabled list info", "");
         alwaysDisabledListInfoJss = new JSONStorableString("Always disabled list info", "");
-        applyFilterAction = new JSONStorableAction("Apply license filter to packages", () =>
+        applyFilterAction = new JSONStorableAction("Run filters and preview result", () =>
         {
             _applyLicenseFilter = true;
             SyncPackageStatuses();
@@ -200,7 +202,7 @@ sealed class PackageLicenseFilter : ScriptBase
             FileUtils.WriteTmpEnabledPackagesFile(string.Join("\n", _fixablePackagePaths.ToArray()));
             RestartVAM();
         });
-        restartVamAction = new JSONStorableAction("Apply changes and restart VAM", () =>
+        restartVamAction = new JSONStorableAction("Save changes and restart VAM", () =>
         {
             FileUtils.WriteAlwaysEnabledCache(_alwaysEnabledPackages);
             FileUtils.WriteAlwaysDisabledCache(_alwaysDisabledPackages);
@@ -224,7 +226,11 @@ sealed class PackageLicenseFilter : ScriptBase
 
             RestartVAM();
         });
-        alwaysEnableDefaultSessionPluginsJsb = new JSONStorableBool("Always enable default session plugin packages", true);
+        alwaysEnableDefaultSessionPluginsJsb = new JSONStorableBool(
+            "Always enable default session plugin packages",
+            true,
+            OnToggleAlwaysEnableDefaultSessionPlugins
+        );
         packageJssc = new JSONStorableStringChooser("Package", new List<string>(), "Select...".Italic(), "Package", OnPackageSelected);
     }
 
@@ -250,10 +256,10 @@ sealed class PackageLicenseFilter : ScriptBase
     void ReadUserPreferencesFromFile()
     {
         var prefsJson = FileUtils.ReadPrefsJSON();
-        if(prefsJson != null && prefsJson.HasKey(addonPackagesLocationJss.name))
+        if(prefsJson != null)
         {
-            // TODO validate
             JSONUtils.SetStorableValueFromJson(prefsJson, addonPackagesLocationJss);
+            JSONUtils.SetStorableValueFromJson(prefsJson, alwaysEnableDefaultSessionPluginsJsb);
         }
         else
         {
@@ -265,6 +271,7 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         var jc = FileUtils.ReadPrefsJSON() ?? new JSONClass();
         jc[addonPackagesLocationJss.name] = addonPackagesLocationJss.val;
+        jc[alwaysEnableDefaultSessionPluginsJsb.name].AsBool = alwaysEnableDefaultSessionPluginsJsb.val;
         FileUtils.WritePrefsJSON(jc);
     }
 
@@ -310,21 +317,20 @@ sealed class PackageLicenseFilter : ScriptBase
         var packageJsscOptions = new List<string>();
         var packageJsscDisplayOptions = new List<string>();
         _cacheUpdated = false;
-        string thisPackageName = this.GetPackageName();
 
         // TODO healthcheck on dir
         // TODO change dir
 
         foreach(string path in FileUtils.FindVarFilePaths(addonPackagesLocationJss.val))
         {
-            string fileName = Utils.BaseName(path);
-            if(!string.IsNullOrEmpty(thisPackageName) && fileName.StartsWith(thisPackageName))
+            string filename = Utils.BaseName(path);
+            if(filename.StartsWith($"everlaster.{nameof(PackageLicenseFilter)}."))
             {
                 continue;
             }
 
             bool isDisabled = FileUtils.DisabledFileExists(path);
-            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(path, fileName) : ReadEnabledPackageLicenseType(path, fileName);
+            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(path, filename) : ReadEnabledPackageLicenseType(path, filename);
             if(string.IsNullOrEmpty(licenseType))
             {
                 continue;
@@ -332,20 +338,28 @@ sealed class PackageLicenseFilter : ScriptBase
 
             if(!licenseTypes.ContainsKey(licenseType))
             {
-                _cacheUpdated = _cacheUpdated || _packageLicenseCache.Remove(fileName);
-                _errorsInfoList.Add($"{fileName}: Unknown license type {licenseType}");
+                _cacheUpdated = _cacheUpdated || _packageLicenseCache.Remove(filename);
+                _errorsInfoList.Add($"{filename}: Unknown license type {licenseType}");
                 continue;
+            }
+
+            bool isDefaultSessionPluginPackage = _defaultSessionPluginPackages.Contains(filename);
+            if(isDefaultSessionPluginPackage && alwaysEnableDefaultSessionPluginsJsb.val)
+            {
+                _alwaysEnabledPackages.Add(filename);
             }
 
             var package = new VarPackage(
                 path,
-                fileName,
+                filename,
                 licenseTypes[licenseType],
                 !isDisabled,
-                _alwaysEnabledPackages.Contains(fileName),
-                _alwaysDisabledPackages.Contains(fileName)
+                isDefaultSessionPluginPackage,
+                _alwaysEnabledPackages.Contains(filename),
+                _alwaysDisabledPackages.Contains(filename)
             );
-            packageJsscOptions.Add(package.fileName);
+
+            packageJsscOptions.Add(package.filename);
             packageJsscDisplayOptions.Add(package.displayString);
 
             if(isDisabled)
@@ -406,29 +420,68 @@ sealed class PackageLicenseFilter : ScriptBase
         }
     }
 
-    string ReadDisabledPackageLicenseType(string path, string fileName)
+    static HashSet<string> FindPackageFilenamesFromDefaultSessionPluginsJson()
     {
-        if(!_packageLicenseCache.ContainsKey(fileName))
+        var result = new HashSet<string>();
+        var jc = FileUtils.ReadJSON("Custom\\PluginPresets\\Plugins_UserDefaults.vap");
+        if(jc != null && jc.HasKey("storables"))
+        {
+            JSONClass plugins = null;
+            foreach(var node in jc["storables"].AsArray.Childs)
+            {
+                var storable = node.AsObject;
+                if(storable["id"].Value == "PluginManager" && storable.HasKey("plugins"))
+                {
+                    plugins = storable["plugins"].AsObject;
+                }
+            }
+
+            if(plugins != null)
+            {
+                foreach(string key in plugins.Keys)
+                {
+                    string scriptFilename = plugins[key].Value;
+                    if(scriptFilename.StartsWith($"everlaster.{nameof(PackageLicenseFilter)}."))
+                    {
+                        continue;
+                    }
+
+                    int idx = scriptFilename.IndexOf(":/", StringComparison.Ordinal);
+                    if(idx >= 0)
+                    {
+                        string packageName = $"{scriptFilename.Substring(0, idx)}.var";
+                        result.Add(packageName);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    string ReadDisabledPackageLicenseType(string path, string filename)
+    {
+        if(!_packageLicenseCache.ContainsKey(filename))
         {
             _fixablePackagePaths.Add(path);
-            _fixablePackageNames.Add(fileName);
+            _fixablePackageNames.Add(filename);
             return null;
         }
 
-        return _packageLicenseCache[fileName];
+        return _packageLicenseCache[filename];
     }
 
-    string ReadEnabledPackageLicenseType(string path, string fileName)
+    string ReadEnabledPackageLicenseType(string path, string filename)
     {
-        if(_packageLicenseCache.ContainsKey(fileName))
+        if(_packageLicenseCache.ContainsKey(filename))
         {
-            return _packageLicenseCache[fileName];
+            return _packageLicenseCache[filename];
         }
 
         string metaJsonPath = FileUtils.NormalizePackagePath(addonPackagesLocationJss.val, $"{path}:/meta.json");
         if(!FileUtils.FileExists(metaJsonPath))
         {
-            _errorsInfoList.Add($"{fileName}: Missing meta.json");
+            _errorsInfoList.Add($"{filename}: Missing meta.json");
             return null;
         }
 
@@ -436,12 +489,12 @@ sealed class PackageLicenseFilter : ScriptBase
         var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
         if(!metaJson.HasKey(licenseTypeKey))
         {
-            _errorsInfoList.Add($"{fileName}: Missing '{licenseTypeKey}' field in meta.json");
+            _errorsInfoList.Add($"{filename}: Missing '{licenseTypeKey}' field in meta.json");
             return null;
         }
 
         string licenseType = metaJson[licenseTypeKey].Value;
-        _packageLicenseCache[fileName] = licenseType;
+        _packageLicenseCache[filename] = licenseType;
         _cacheUpdated = true;
         return licenseType;
     }
@@ -461,21 +514,22 @@ sealed class PackageLicenseFilter : ScriptBase
                 );
             }
 
-            bool willEnable = _enabledInfoList != null && _enabledInfoList.Count > 0;
-            if(willEnable)
+            int toEnableCount = _enabledInfoList?.Count ?? 0;
+            if(_enabledInfoList != null && toEnableCount > 0)
             {
-                sb.AppendLine($"{_enabledInfoList.Count} package(s) will be enabled:\n");
+                sb.AppendLine($"{toEnableCount} package(s) will be enabled:\n");
                 sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
                 sb.AppendLine("");
             }
 
-            bool willDisable = _disabledInfoList != null && _disabledInfoList.Count > 0;
-            if(willDisable)
+            int toDisableCount = _disabledInfoList?.Count ?? 0;
+            if(_disabledInfoList != null && toDisableCount > 0)
             {
-                sb.Append($"{_disabledInfoList.Count} package(s) will be disabled");
-                if(_preDisabledInfoList.Count > 0)
+                sb.Append($"{toDisableCount} package(s) will be disabled");
+                int totalDisabledCount = _preDisabledInfoList.Count - toEnableCount;
+                if(totalDisabledCount > 0)
                 {
-                    sb.Append($" (in addition to {_preDisabledInfoList.Count} already disabled)");
+                    sb.Append($" (in addition to {totalDisabledCount} already disabled)");
                 }
 
                 sb.AppendLine(":\n");
@@ -485,7 +539,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
             AddErrorsInfo(sb);
 
-            if(!willEnable && !willDisable)
+            if(toEnableCount == 0 && toDisableCount == 0)
             {
                 sb.AppendLine("No changes.\n");
                 AddPreDisabledInfo(sb);
@@ -528,6 +582,7 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         SyncPreferencesFile();
         InitPackages();
+        FileUtils.WriteAlwaysEnabledCache(_alwaysEnabledPackages);
         _setupWindow.Clear();
         _mainWindow.Rebuild();
     }
@@ -608,7 +663,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
         if(value)
         {
-            _alwaysEnabledPackages.Add(_selectedPackage.fileName);
+            _alwaysEnabledPackages.Add(_selectedPackage.filename);
             alwaysDisableSelectedJsb.valNoCallback = false;
             if(_selectedPackage.forceDisabled)
             {
@@ -618,7 +673,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
         else
         {
-            _alwaysEnabledPackages.Remove(_selectedPackage.fileName);
+            _alwaysEnabledPackages.Remove(_selectedPackage.filename);
         }
 
         SyncPackageStatuses();
@@ -636,7 +691,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
         if(value)
         {
-            _alwaysDisabledPackages.Add(_selectedPackage.fileName);
+            _alwaysDisabledPackages.Add(_selectedPackage.filename);
             alwaysEnableSelectedJsb.valNoCallback = false;
             if(_selectedPackage.forceEnabled)
             {
@@ -646,10 +701,42 @@ sealed class PackageLicenseFilter : ScriptBase
         }
         else
         {
-            _alwaysDisabledPackages.Remove(_selectedPackage.fileName);
+            _alwaysDisabledPackages.Remove(_selectedPackage.filename);
         }
 
         SyncPackageStatuses();
+    }
+
+    void OnToggleAlwaysEnableDefaultSessionPlugins(bool value)
+    {
+        SyncPreferencesFile();
+
+        foreach(var package in _varPackages)
+        {
+            if(package.isDefaultSessionPluginPackage)
+            {
+                package.forceEnabled = value;
+                if(value)
+                {
+                    package.forceDisabled = false;
+                    _alwaysEnabledPackages.Add(package.filename);
+                    _alwaysDisabledPackages.Remove(package.filename);
+                }
+                else
+                {
+                    _alwaysEnabledPackages.Remove(package.filename);
+                }
+
+                if(package == _selectedPackage)
+                {
+                    alwaysEnableSelectedJsb.valNoCallback = package.forceEnabled;
+                    alwaysDisableSelectedJsb.valNoCallback = package.forceDisabled;
+                }
+            }
+        }
+
+        UpdateAlwaysEnabledListInfoText();
+        UpdateAlwaysDisabledListInfoText();
     }
 
     void OnPackageSelected(string value)
@@ -708,20 +795,20 @@ sealed class PackageLicenseFilter : ScriptBase
         alwaysDisabledListInfoJss.val = sb.ToString();
     }
 
-    VarPackage FindPackage(string fileName)
+    VarPackage FindPackage(string filename)
     {
-        if(string.IsNullOrEmpty(fileName) || fileName == packageJssc.defaultVal)
+        if(string.IsNullOrEmpty(filename) || filename == packageJssc.defaultVal)
         {
             return null;
         }
 
         try
         {
-            return _varPackages.Find(package => package.fileName == fileName);
+            return _varPackages.Find(package => package.filename == filename);
         }
         catch(Exception e)
         {
-            Loggr.Error($"Error finding package {fileName}: {e}");
+            Loggr.Error($"Error finding package {filename}: {e}");
             return null;
         }
     }

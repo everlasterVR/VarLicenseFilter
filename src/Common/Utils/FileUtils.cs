@@ -187,14 +187,14 @@ static class FileUtils
         FileManagerSecure.WriteAllText(path, jc.ToString(""), confirmCallback, null, null);
     }
 
-    public static bool FileExists(string path)
-    {
-        return FileManagerSecure.FileExists(path);
-    }
-
     public static bool DisabledFileExists(string packagePath)
     {
         return FileExists($"{packagePath}.{DISABLED_EXT}");
+    }
+
+    public static bool FileExists(string path)
+    {
+        return FileManagerSecure.FileExists(path);
     }
 
     public static void DeleteDisabledFile(string packagePath)

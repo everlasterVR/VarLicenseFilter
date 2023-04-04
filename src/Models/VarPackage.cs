@@ -1,7 +1,7 @@
 ﻿sealed class VarPackage
 {
     public string path { get; }
-    public string fileName { get; }
+    public string filename { get; }
     public License license { get; }
     public string displayString { get; }
 
@@ -10,15 +10,25 @@
     public bool changed { get; private set; }
     public bool forceEnabled { get; set; }
     public bool forceDisabled { get; set; }
+    public bool isDefaultSessionPluginPackage { get; }
 
-    public VarPackage(string path, string fileName, License license, bool enabled, bool forceEnabled, bool forceDisabled)
+    public VarPackage(
+        string path,
+        string filename,
+        License license,
+        bool enabled,
+        bool isDefaultSessionPluginPackage,
+        bool forceEnabled,
+        bool forceDisabled
+    )
     {
         this.path = path;
-        this.fileName = fileName;
+        this.filename = filename;
         this.license = license;
-        displayString = $"[{license.displayName}]\u00A0{fileName}";
+        displayString = $"{filename}\u00A0[{license.displayName}]";
         _initialEnabled = enabled;
         this.enabled = _initialEnabled;
+        this.isDefaultSessionPluginPackage = isDefaultSessionPluginPackage;
         this.forceEnabled = forceEnabled;
         this.forceDisabled = forceDisabled;
     }
