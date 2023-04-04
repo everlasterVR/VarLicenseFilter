@@ -4,42 +4,37 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-sealed class Bindings : MonoBehaviour
+class Bindings : MonoBehaviour
 {
-    Dictionary<string, string> _namespace;
-    PackageLicenseFilter _script;
+    ScriptBase _script;
+    public Dictionary<string, string> @namespace { get; private set; }
+    Dictionary<string, JSONStorableAction> _actions;
 
-    public Dictionary<string, string> Namespace()
+    public void Init(ScriptBase script, string namespaceName)
     {
-        return _namespace;
-    }
-
-    public Dictionary<string, JSONStorableAction> actions { get; private set; }
-
-    // ReSharper disable once ReturnTypeCanBeEnumerable.Global
-    public List<object> Actions()
-    {
-        return actions.Values.Select(action => (object) action).ToList();
-    }
-
-    public void Init()
-    {
-        _script = PackageLicenseFilter.script;
-        _namespace = new Dictionary<string, string>
+        _script = script;
+        @namespace = new Dictionary<string, string>
         {
-            { "Namespace", nameof(PackageLicenseFilter) },
+            { "Namespace", namespaceName },
         };
-        var jsonStorableActions = new List<JSONStorableAction>
+        _actions = new Dictionary<string, JSONStorableAction>();
+        AddActions(new List<JSONStorableAction>
         {
-            _script.NewJSONStorableAction(Constant.OPEN_UI, OpenUI),
-        };
-
-        actions = jsonStorableActions.ToDictionary(action => action.name, action => action);
+            script.NewJSONStorableAction(Constant.OPEN_UI, () => StartCoroutine(SelectPluginUI())),
+        });
     }
 
-    void OpenUI()
+    public IEnumerable<object> GetActionsList()
     {
-        StartCoroutine(SelectPluginUI());
+        return _actions.Values.Select(action => (object) action).ToList();
+    }
+
+    void AddActions(List<JSONStorableAction> actionsList)
+    {
+        foreach(var action in actionsList)
+        {
+            _actions[action.name] = action;
+        }
     }
 
     // adapted from Timeline v4.3.1 (c) acidbubbles
@@ -107,17 +102,16 @@ sealed class Bindings : MonoBehaviour
         SuperController.singleton.ShowMainHUDAuto();
 
         float timeout = Time.unscaledTime + 1;
-        UITabSelector selector = null;
-        while(Time.unscaledTime < timeout && !selector)
+        while(Time.unscaledTime < timeout)
         {
             yield return null;
-            selector = _script.containingAtom.gameObject.GetComponentInChildren<UITabSelector>();
-        }
-
-        if(selector)
-        {
-            selector.SetActiveTab(tabName);
-            postAction?.Invoke();
+            var selector = _script.containingAtom.gameObject.GetComponentInChildren<UITabSelector>();
+            if(selector)
+            {
+                selector.SetActiveTab(tabName);
+                postAction?.Invoke();
+                break;
+            }
         }
     }
 }

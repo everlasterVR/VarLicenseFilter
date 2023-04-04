@@ -234,8 +234,8 @@ sealed class PackageLicenseFilter : ScriptBase
     public void OnBindingsListRequested(List<object> bindingsList)
     {
         InitBindings(); // Might already be setup in Init.
-        bindingsList.Add(bindings.Namespace());
-        bindingsList.AddRange(bindings.Actions());
+        bindingsList.Add(bindings.@namespace);
+        bindingsList.AddRange(bindings.GetActionsList());
     }
 
     void InitBindings()
@@ -246,7 +246,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
 
         bindings = gameObject.AddComponent<Bindings>();
-        bindings.Init();
+        bindings.Init(this, nameof(PackageLicenseFilter));
     }
 
     List<string> _preDisabledInfoList;
@@ -509,7 +509,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
         catch(Exception e)
         {
-            Loggr.Error($"Error disabling temporarily enabled packages: {e.Message}");
+            Loggr.Error($"Error disabling temporarily enabled packages: {e}");
         }
     }
 

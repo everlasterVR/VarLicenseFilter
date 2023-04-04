@@ -60,18 +60,19 @@ static partial class UIDynamicExtensions
         }
 
         var color = isActive ? Color.black : Colors.inactive;
+        bool interactable = !(setInteractable && !isActive);
         if(element is UIDynamicSlider)
         {
             var uiDynamicSlider = (UIDynamicSlider) element;
-            uiDynamicSlider.slider.interactable = !setInteractable || isActive;
-            uiDynamicSlider.quickButtonsEnabled = !setInteractable || isActive;
-            uiDynamicSlider.defaultButtonEnabled = !setInteractable || isActive;
+            uiDynamicSlider.slider.interactable = interactable;
+            uiDynamicSlider.quickButtonsEnabled = interactable;
+            uiDynamicSlider.defaultButtonEnabled = interactable;
             uiDynamicSlider.labelText.color = color;
         }
         else if(element is UIDynamicToggle)
         {
             var uiDynamicToggle = (UIDynamicToggle) element;
-            uiDynamicToggle.toggle.interactable = !setInteractable || isActive;
+            uiDynamicToggle.toggle.interactable = interactable;
             if(highlightIneffective && uiDynamicToggle.toggle.isOn && uiDynamicToggle.toggle.interactable)
             {
                 color = isActive ? Color.black : Color.red;
@@ -82,7 +83,7 @@ static partial class UIDynamicExtensions
         else if(element is UIDynamicButton)
         {
             var uiDynamicButton = (UIDynamicButton) element;
-            uiDynamicButton.button.interactable = !setInteractable || isActive;
+            uiDynamicButton.button.interactable = interactable;
             var colors = uiDynamicButton.button.colors;
             colors.disabledColor = colors.normalColor;
             uiDynamicButton.button.colors = colors;
@@ -91,7 +92,7 @@ static partial class UIDynamicExtensions
         else if(element is UIDynamicPopup)
         {
             var uiDynamicPopup = (UIDynamicPopup) element;
-            uiDynamicPopup.SetInteractable(!setInteractable || isActive);
+            uiDynamicPopup.SetInteractable(interactable);
         }
         else
         {
