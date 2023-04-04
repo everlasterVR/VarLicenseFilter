@@ -182,6 +182,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 Debug.Log($"Package {filename} not found?");
                 continue;
             }
+
             package.isDefaultSessionPluginPackage = true;
 
             if(alwaysEnableDefaultSessionPluginsJsb.val)
@@ -804,7 +805,7 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             if(package.forceEnabled)
             {
-                list.Add(package.displayString);
+                list.Add(package.isDefaultSessionPluginPackage ? package.displayString.Color(Colors.sessionPluginColor) : package.displayString);
             }
         }
 

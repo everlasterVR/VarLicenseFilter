@@ -58,8 +58,7 @@ sealed class PackagesWindow : WindowBase
         {
             var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS ENABLED PACKAGES".Bold(), 26, 40, rightSide);
             textField.UItext.alignment = TextAnchor.LowerLeft;
-            textField.textColor = new Color(0, 0.33f, 0);
-
+            textField.textColor = Colors.veryDarkGreen;
             return textField;
         });
 
@@ -91,7 +90,7 @@ sealed class PackagesWindow : WindowBase
         {
             var toggle = script.CreateToggle(PackageLicenseFilter.script.alwaysEnableDefaultSessionPluginsJsb, rightSide);
             toggle.height = 80;
-            toggle.label = "Always enable default session\nplugin packages";
+            toggle.label = "Always enable default session\nplugin packages".Color(Colors.sessionPluginColor);
             return toggle;
         });
 
@@ -103,7 +102,7 @@ sealed class PackagesWindow : WindowBase
         {
             var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS DISABLED PACKAGES".Bold(), 26, 40, rightSide);
             textField.UItext.alignment = TextAnchor.LowerLeft;
-            textField.textColor = new Color(0.33f, 0, 0);
+            textField.textColor = Colors.veryDarkRed;
             return textField;
         });
 
