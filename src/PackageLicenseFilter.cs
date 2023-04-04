@@ -755,6 +755,11 @@ sealed class PackageLicenseFilter : ScriptBase
 
     void OnToggleAlwaysEnableDefaultSessionPlugins(bool value)
     {
+        if(!_lateInitDone)
+        {
+            return;
+        }
+
         SyncPreferencesFile();
 
         foreach(var package in _varPackages)
@@ -783,6 +788,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
         UpdateAlwaysEnabledListInfoText();
         UpdateAlwaysDisabledListInfoText();
+        SyncPackageStatuses();
     }
 
     void OnPackageSelected(string value)
