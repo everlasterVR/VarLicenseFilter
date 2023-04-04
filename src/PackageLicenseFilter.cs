@@ -60,6 +60,8 @@ sealed class PackageLicenseFilter : ScriptBase
     }
 
     Dictionary<string, string> _packageLicenseCache;
+    HashSet<string> _alwaysEnabledPackages;
+    HashSet<string> _alwaysDisabledPackages;
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
     public readonly Dictionary<string, License> licenseTypes = new Dictionary<string, License>
     {
@@ -136,6 +138,8 @@ sealed class PackageLicenseFilter : ScriptBase
 
             SetupStorables();
             ReadLicenseCacheFromFile();
+            _alwaysEnabledPackages = new HashSet<string>(FileUtils.ReadAlwaysEnabledCache());
+            _alwaysDisabledPackages = new HashSet<string>(FileUtils.ReadAlwaysDisabledCache());
             ReadUserPreferencesFromFile();
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
@@ -196,8 +200,11 @@ sealed class PackageLicenseFilter : ScriptBase
             FileUtils.WriteTmpEnabledPackagesFile(string.Join("\n", _fixablePackagePaths.ToArray()));
             RestartVAM();
         });
-        restartVamAction = new JSONStorableAction("Restart VAM to apply changes", () =>
+        restartVamAction = new JSONStorableAction("Apply changes and restart VAM", () =>
         {
+            FileUtils.WriteAlwaysEnabledCache(_alwaysEnabledPackages);
+            FileUtils.WriteAlwaysDisabledCache(_alwaysDisabledPackages);
+
             foreach(var package in _varPackages)
             {
                 if(!package.changed)
@@ -298,7 +305,6 @@ sealed class PackageLicenseFilter : ScriptBase
         _fixablePackageNames = new List<string>();
         _fixablePackagePaths = new List<string>();
         _tmpEnabledPackageNames = FileUtils.ReadTmpEnabledPackagesFile()
-            .Split('\n')
             .Where(packageName => !string.IsNullOrEmpty(packageName))
             .ToList();
         var packageJsscOptions = new List<string>();
@@ -331,7 +337,14 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
-            var package = new VarPackage(path, fileName, licenseTypes[licenseType], !isDisabled);
+            var package = new VarPackage(
+                path,
+                fileName,
+                licenseTypes[licenseType],
+                !isDisabled,
+                _alwaysEnabledPackages.Contains(fileName),
+                _alwaysDisabledPackages.Contains(fileName)
+            );
             packageJsscOptions.Add(package.fileName);
             packageJsscDisplayOptions.Add(package.displayString);
 
@@ -595,12 +608,17 @@ sealed class PackageLicenseFilter : ScriptBase
 
         if(value)
         {
+            _alwaysEnabledPackages.Add(_selectedPackage.fileName);
             alwaysDisableSelectedJsb.valNoCallback = false;
             if(_selectedPackage.forceDisabled)
             {
                 _selectedPackage.forceDisabled = false;
                 UpdateAlwaysDisabledListInfoText();
             }
+        }
+        else
+        {
+            _alwaysEnabledPackages.Remove(_selectedPackage.fileName);
         }
 
         SyncPackageStatuses();
@@ -613,19 +631,22 @@ sealed class PackageLicenseFilter : ScriptBase
             return;
         }
 
-        Debug.Log($"{_selectedPackage.fileName}: OnToggleAlwaysDisabled: {value}");
-
         _selectedPackage.forceDisabled = value;
         UpdateAlwaysDisabledListInfoText();
 
         if(value)
         {
+            _alwaysDisabledPackages.Add(_selectedPackage.fileName);
             alwaysEnableSelectedJsb.valNoCallback = false;
             if(_selectedPackage.forceEnabled)
             {
                 _selectedPackage.forceEnabled = false;
                 UpdateAlwaysEnabledListInfoText();
             }
+        }
+        else
+        {
+            _alwaysDisabledPackages.Remove(_selectedPackage.fileName);
         }
 
         SyncPackageStatuses();
@@ -651,7 +672,7 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             if(package.forceEnabled)
             {
-                list.Add(package.fileName);
+                list.Add(package.displayString);
             }
         }
 
@@ -674,7 +695,7 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             if(package.forceDisabled)
             {
-                list.Add(package.fileName);
+                list.Add(package.displayString);
             }
         }
 

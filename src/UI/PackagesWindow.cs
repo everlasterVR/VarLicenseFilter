@@ -47,7 +47,7 @@ sealed class PackagesWindow : WindowBase
 
     void BuildLeftSide(bool rightSide = false)
     {
-        AddInfoTextField("Packages that are always enabled or disabled are ignored when filtering all packages by license type.", rightSide);
+        AddInfoTextField("Packages that are always enabled or disabled are ignored when filtering\npackages by license type.", rightSide);
         AddSpacer(80, rightSide);
         var alwaysEnableJsb = PackageLicenseFilter.script.alwaysEnableSelectedJsb;
         AddElement(alwaysEnableJsb.name, () =>
@@ -115,7 +115,7 @@ sealed class PackagesWindow : WindowBase
             return;
         }
 
-        bool isSelected = !string.IsNullOrEmpty(packageFileName);
+        bool isSelected = !string.IsNullOrEmpty(packageFileName) && packageFileName != PackageLicenseFilter.script.packageJssc.defaultVal;
         enableToggle.SetActiveStyle(isSelected, true);
         disableToggle.SetActiveStyle(isSelected, true);
     }

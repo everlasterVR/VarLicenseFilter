@@ -15,6 +15,7 @@ public class License
     public static License Questionable { get; } = new License("Questionable");
 
     public string name { get; }
+    public string displayName { get; }
     public JSONStorableBool enabledJsb { get; }
     public bool isCc { get; }
     public bool requiresAttribution { get; }
@@ -25,6 +26,7 @@ public class License
     License(string name)
     {
         this.name = name;
+        displayName = name.Replace(" ", "\u00A0");
         enabledJsb = new JSONStorableBool("enabled", true);
 
         if(name == "FC" || name.StartsWith("CC"))

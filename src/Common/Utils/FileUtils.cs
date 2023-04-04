@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using MVR.FileManagementSecure;
 using SimpleJSON;
@@ -9,7 +10,9 @@ static class FileUtils
 {
     const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
     const string PREFS_FILE = "preferences.json";
-    const string LICENSE_CACHE_FILE = "licensecache.json";
+    const string LICENSE_CACHE_FILE = "license_cache.json";
+    const string ALWAYS_ENABLED_CACHE_FILE = "always_enabled_packages.txt";
+    const string ALWAYS_DISABLED_CACHE_FILE = "always_disabled_packages.txt";
     const string TMP_ENABLED_FILE = "tmp_enabled_packages.txt";
     const string DISABLED_EXT = "disabled";
 
@@ -100,6 +103,32 @@ static class FileUtils
         WriteJSON(jc, $"{DATA_DIR}/{LICENSE_CACHE_FILE}", confirmCallback);
     }
 
+    public static IEnumerable<string> ReadAlwaysEnabledCache()
+    {
+        EnsureDataDirExists();
+        string text = ReadText($"{DATA_DIR}/{ALWAYS_ENABLED_CACHE_FILE}");
+        return !string.IsNullOrEmpty(text.Trim()) ? text.Split('\n') : new string[0];
+    }
+
+    public static void WriteAlwaysEnabledCache(IEnumerable<string> set)
+    {
+        EnsureDataDirExists();
+        FileManagerSecure.WriteAllText($"{DATA_DIR}/{ALWAYS_ENABLED_CACHE_FILE}", string.Join("\n", set.ToArray()));
+    }
+
+    public static IEnumerable<string> ReadAlwaysDisabledCache()
+    {
+        EnsureDataDirExists();
+        string text = ReadText($"{DATA_DIR}/{ALWAYS_DISABLED_CACHE_FILE}");
+        return !string.IsNullOrEmpty(text.Trim()) ? text.Split('\n') : new string[0];
+    }
+
+    public static void WriteAlwaysDisabledCache(IEnumerable<string> set)
+    {
+        EnsureDataDirExists();
+        FileManagerSecure.WriteAllText($"{DATA_DIR}/{ALWAYS_DISABLED_CACHE_FILE}", string.Join("\n", set.ToArray()));
+    }
+
     public static JSONClass ReadPrefsJSON()
     {
         EnsureDataDirExists();
@@ -112,11 +141,10 @@ static class FileUtils
         WriteJSON(jc, $"{DATA_DIR}/{PREFS_FILE}", confirmCallback);
     }
 
-    public static string ReadTmpEnabledPackagesFile()
+    public static IEnumerable<string> ReadTmpEnabledPackagesFile()
     {
         EnsureDataDirExists();
-        string path = GetTmpEnabledFileFullPath();
-        return FileManagerSecure.FileExists(path) ? FileManagerSecure.ReadAllText(path) : "";
+        return ReadText(GetTmpEnabledFileFullPath()).Split('\n');
 
     }
 
@@ -147,6 +175,11 @@ static class FileUtils
         }
 
         return jc;
+    }
+
+    static string ReadText(string path)
+    {
+        return FileManagerSecure.FileExists(path) ? FileManagerSecure.ReadAllText(path) : "";
     }
 
     public static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null)

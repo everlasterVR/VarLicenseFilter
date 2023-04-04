@@ -8,18 +8,19 @@
     readonly bool _initialEnabled;
     public bool enabled { get; private set; }
     public bool changed { get; private set; }
-
-    public bool forceDisabled { get; set; }
     public bool forceEnabled { get; set; }
+    public bool forceDisabled { get; set; }
 
-    public VarPackage(string path, string fileName, License license, bool enabled)
+    public VarPackage(string path, string fileName, License license, bool enabled, bool forceEnabled, bool forceDisabled)
     {
         this.path = path;
         this.fileName = fileName;
         this.license = license;
-        displayString = $"[{license.name}] {fileName}";
+        displayString = $"[{license.displayName}]\u00A0{fileName}";
         _initialEnabled = enabled;
         this.enabled = _initialEnabled;
+        this.forceEnabled = forceEnabled;
+        this.forceDisabled = forceDisabled;
     }
 
     public void SyncEnabled(bool applyLicenseFilter)
