@@ -110,6 +110,7 @@
         <None Include="README.md" />
     </ItemGroup>
     <ItemGroup>
+        <Content Include="CreateAddonPackagesSymlink.bat" />
         <Content Include="scripts\generate_cslist.sh" />
         <Content Include="scripts\package.sh" />
     </ItemGroup>

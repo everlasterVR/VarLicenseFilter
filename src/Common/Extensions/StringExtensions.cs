@@ -37,4 +37,18 @@ static partial class StringExtensions
             ? str
             : str.Remove(index, oldValue.Length).Insert(index, newValue);
     }
+
+    public static int CountOccurrences(this string str, string substring)
+    {
+        int count = 0;
+        int index = 0;
+
+        while ((index = str.IndexOf(substring, index, StringComparison.Ordinal)) != -1)
+        {
+            count++;
+            index += substring.Length;
+        }
+
+        return count;
+    }
 }

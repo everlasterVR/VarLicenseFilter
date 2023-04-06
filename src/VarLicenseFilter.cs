@@ -156,7 +156,7 @@ sealed class VarLicenseFilter : ScriptBase
             _alwaysDisabledPackages = new HashSet<string>(FileUtils.ReadAlwaysDisabledCache());
             _mainWindow = new MainWindow();
             _setupWindow = new SetupWindow();
-            if(string.IsNullOrEmpty(addonPackagesLocationJss.val))
+            if(string.IsNullOrEmpty(addonPackagesLocationJss.val) || !FileUtils.DirectoryExists(addonPackagesLocationJss.val))
             {
                 FindAddonPackagesDirPaths();
                 _setupWindow.Rebuild();
@@ -209,8 +209,8 @@ sealed class VarLicenseFilter : ScriptBase
     void FindAddonPackagesDirPaths()
     {
         addonPackagesDirPaths = new List<string>();
-        addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Custom\PluginData", "AddonPackages"));
-        addonPackagesDirPaths.AddRange(FileUtils.FindDirPaths(@"Saves\PluginData", "AddonPackages"));
+        addonPackagesDirPaths.AddRange(FileUtils.FindAddonPackagesInPluginDataDirPaths("Custom"));
+        addonPackagesDirPaths.AddRange(FileUtils.FindAddonPackagesInPluginDataDirPaths("Saves"));
         // (string _) => ((SetupWindow) _setupWindow).Refresh()
     }
 
@@ -404,9 +404,6 @@ sealed class VarLicenseFilter : ScriptBase
         _licenseCacheUpdated = false;
         _secondaryLicenseCacheUpdated = false;
         var dateTimeInts = new DateTimeInts(DateTime.Today);
-
-        // TODO healthcheck on dir
-        // TODO change dir
 
         foreach(string path in FileUtils.FindVarFilePaths(addonPackagesLocationJss.val))
         {

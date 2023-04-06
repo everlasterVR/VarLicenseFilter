@@ -21,6 +21,7 @@ cp meta.json $work_dir/
 cp ./*.cslist $resource_dir/
 cp -r src $resource_dir/
 cp -r Vendor $resource_dir/
+cp CreateAddonPackagesSymlink.bat $resource_dir/
 
 # update version info
 sed -i "s/0\.0\.0/$plugin_version/g" $work_dir/meta.json

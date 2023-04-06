@@ -21,16 +21,27 @@ static class FileUtils
         return $"{DATA_DIR}/{TMP_ENABLED_FILE}";
     }
 
-    public static IEnumerable<string> FindDirPaths(string rootPath, string dirName)
+    public static IEnumerable<string> FindAddonPackagesInPluginDataDirPaths(string rootDir)
     {
+        string rootPath = $@"{rootDir}\PluginData";
         var result = new List<string>();
         var searchDirs = new Stack<string>();
         searchDirs.Push(FileManagerSecure.NormalizePath(rootPath));
 
         while(searchDirs.Count > 0)
         {
-            string searchDir = searchDirs.Pop();
-            foreach(string dir in FileManagerSecure.GetDirectories(searchDir))
+            string[] dirs;
+            try
+            {
+                dirs = FileManagerSecure.GetDirectories(searchDirs.Pop());
+            }
+            catch(Exception e)
+            {
+                Debug.Log("Error in FindDirPaths: " + e);
+                continue;
+            }
+
+            foreach(string dir in dirs)
             {
                 string normalizedDir = FileManagerSecure.NormalizePath(dir);
                 if(normalizedDir.Contains(".var:"))
@@ -38,11 +49,11 @@ static class FileUtils
                     continue;
                 }
 
-                if(Utils.BaseName(normalizedDir) == dirName)
+                if(Utils.BaseName(normalizedDir) == "AddonPackages")
                 {
                     result.Add(normalizedDir + "/");
                 }
-                else
+                else if(normalizedDir.CountOccurrences("PluginData") == 1)
                 {
                     searchDirs.Push(normalizedDir);
                 }
@@ -207,6 +218,11 @@ static class FileUtils
     public static bool FileExists(string path)
     {
         return FileManagerSecure.FileExists(path);
+    }
+
+    public static bool DirectoryExists(string path)
+    {
+        return FileManagerSecure.DirectoryExists(path);
     }
 
     public static void DeleteDisabledFile(string packagePath)
