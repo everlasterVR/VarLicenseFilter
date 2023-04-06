@@ -63,7 +63,7 @@ sealed class PackageLicenseFilter : ScriptBase
     Dictionary<string, SecondaryLicenseCacheObject> _packageSecondaryLicenseCache;
     HashSet<string> _alwaysEnabledPackages;
     HashSet<string> _alwaysDisabledPackages;
-    readonly List<VarPackage> _varPackages = new List<VarPackage>();
+    List<VarPackage> _varPackages;
     public readonly Dictionary<string, License> licenses = new Dictionary<string, License>
     {
         { License.FC.name, License.FC },
@@ -392,6 +392,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
     void InitPackages()
     {
+        var tmpPackagesList = new List<VarPackage>();
         _preDisabledInfoList = new List<string>();
         _errorsInfoList = new List<string>();
         _fixablePackageNames = new List<string>();
@@ -547,8 +548,10 @@ sealed class PackageLicenseFilter : ScriptBase
                 _preDisabledInfoList.Add(package.displayString);
             }
 
-            _varPackages.Add(package);
+            tmpPackagesList.Add(package);
         }
+
+        _varPackages = tmpPackagesList.OrderBy(package => package.filename).ToList();
 
         packageJssc.choices = packageJsscOptions;
         packageJssc.displayChoices = packageJsscDisplayOptions;
@@ -667,16 +670,21 @@ sealed class PackageLicenseFilter : ScriptBase
         return licenseType;
     }
 
+    // static int _lineCount;
+    static int _extraLineCount;
+
     void UpdateInfoPanelText(bool onApplyChanges)
     {
         var sb = new StringBuilder();
         sb.Append("\n".Size(8));
+        // _lineCount = 0;
+        _extraLineCount = 0;
 
         if(onApplyChanges)
         {
             if(_tmpEnabledPackageNames.Count > 0)
             {
-                sb.AppendLine(
+                AddLine(sb,
                     "Some initially disabled packages were temporarily enabled in order to update their license info to cache." +
                     " These should be visible below in the list of packages to disable.\n"
                 );
@@ -685,31 +693,39 @@ sealed class PackageLicenseFilter : ScriptBase
             int toEnableCount = _enabledInfoList?.Count ?? 0;
             if(_enabledInfoList != null && toEnableCount > 0)
             {
-                sb.AppendLine($"{toEnableCount} package(s) will be enabled:\n");
-                sb.AppendLine(string.Join("\n", _enabledInfoList.ToArray()));
-                sb.AppendLine("");
+                AddLine(sb, $"{toEnableCount} package(s) will be enabled:\n");
+                foreach(string line in _enabledInfoList)
+                {
+                    AddLine(sb, line);
+                }
+
+                AddLine(sb);
             }
 
             int toDisableCount = _disabledInfoList?.Count ?? 0;
             if(_disabledInfoList != null && toDisableCount > 0)
             {
-                sb.Append($"{toDisableCount} package(s) will be disabled");
+                string willBeDisabledText = $"{toDisableCount} package(s) will be disabled";
                 int totalDisabledCount = _preDisabledInfoList.Count - toEnableCount;
                 if(totalDisabledCount > 0)
                 {
-                    sb.Append($" (in addition to {totalDisabledCount} already disabled)");
+                    willBeDisabledText += $" (in addition to {totalDisabledCount} already disabled)";
                 }
 
-                sb.AppendLine(":\n");
-                sb.AppendLine(string.Join("\n", _disabledInfoList.ToArray()));
-                sb.AppendLine("");
+                AddLine(sb, $"{willBeDisabledText}:\n");
+                foreach(string line in _disabledInfoList)
+                {
+                    AddLine(sb, line);
+                }
+
+                AddLine(sb);
             }
 
             AddErrorsInfo(sb);
 
             if(toEnableCount == 0 && toDisableCount == 0)
             {
-                sb.AppendLine("No changes.\n");
+                AddLine(sb, "No changes.\n");
                 AddPreDisabledInfo(sb);
             }
         }
@@ -719,23 +735,40 @@ sealed class PackageLicenseFilter : ScriptBase
             AddPreDisabledInfo(sb);
         }
 
-        /* Prevent ArgumentException: Mesh can not have more than 65000 vertices */
-        filterInfoJss.val = sb.Length > 16000
-            ? sb.ToString().Substring(0, 16000) + "\n\n... (truncated)"
+        filterInfoJss.val = _extraLineCount > 0
+            ? sb + $"\n... {_extraLineCount} more rows (truncated)"
             : sb.ToString();
+    }
+
+    static void AddLine(StringBuilder sb, string str = "")
+    {
+        /* Prevent ArgumentException: Mesh can not have more than 65000 vertices */
+        if(sb.Length < 16000)
+        {
+            sb.AppendLine(str);
+            // _lineCount++;
+        }
+        else
+        {
+            _extraLineCount++;
+        }
     }
 
     void AddPreDisabledInfo(StringBuilder sb)
     {
         if(_preDisabledInfoList.Count > 0)
         {
-            sb.AppendLine($"{_preDisabledInfoList.Count} package(s) are currently disabled:\n");
-            sb.AppendLine(string.Join("\n", _preDisabledInfoList.ToArray()));
-            sb.AppendLine("");
+            AddLine(sb, $"{_preDisabledInfoList.Count} package(s) are currently disabled:\n");
+            foreach(string line in _preDisabledInfoList)
+            {
+                AddLine(sb, line);
+            }
+
+            AddLine(sb);
         }
         else
         {
-            sb.AppendLine("0 packages are currently disabled.\n");
+            AddLine(sb, "0 packages are currently disabled.\n");
         }
     }
 
@@ -743,9 +776,13 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         if(_errorsInfoList.Count > 0)
         {
-            sb.AppendLine($"{_errorsInfoList.Count} package(s) have errors:\n");
-            sb.AppendLine(string.Join("\n", _errorsInfoList.ToArray()));
-            sb.AppendLine("");
+            AddLine(sb, $"{_errorsInfoList.Count} package(s) have errors:\n");
+            foreach(string line in _errorsInfoList)
+            {
+                AddLine(sb, line);
+            }
+
+            AddLine(sb);
         }
     }
 

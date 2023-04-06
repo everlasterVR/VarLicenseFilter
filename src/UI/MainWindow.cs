@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 sealed class MainWindow : WindowBase
 {
@@ -23,6 +24,11 @@ sealed class MainWindow : WindowBase
             PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
             textField.UItext.fontSize = 26;
             textField.backgroundColor = Color.white;
+            textField.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var scrollView = textField.transform.Find("Scroll View");
+            var scrollRect = scrollView.GetComponent<ScrollRect>();
+            scrollRect.horizontal = true;
+            scrollRect.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
             return textField;
         });
         BuildRightSide();
