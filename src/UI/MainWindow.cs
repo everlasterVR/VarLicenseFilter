@@ -31,7 +31,7 @@ sealed class MainWindow : WindowBase
 
     void BuildLeftSide(bool rightSide = false)
     {
-        var list = PackageLicenseFilter.script.licenseTypes.Values.ToList();
+        var list = PackageLicenseFilter.script.licenses.Values.ToList();
         int leftCount = 0;
         int rightCount = 0;
         for(int i = 0; i < list.Count; i++)
@@ -222,7 +222,7 @@ sealed class MainWindow : WindowBase
 
     static void SelectLicenseTypes(LicenseFilter filter)
     {
-        foreach(var kvp in PackageLicenseFilter.script.licenseTypes)
+        foreach(var kvp in PackageLicenseFilter.script.licenses)
         {
             var license = kvp.Value;
             license.enabledJsb.val = filter(license);

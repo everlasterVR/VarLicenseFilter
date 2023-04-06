@@ -94,7 +94,10 @@
         <Compile Include="src\Common\Utils\JSONUtils.cs" />
         <Compile Include="src\Common\Utils\Loggr.cs" />
         <Compile Include="src\Common\Utils\Utils.cs" />
+        <Compile Include="src\Models\DateTimeInts.cs" />
         <Compile Include="src\Models\License.cs" />
+        <Compile Include="src\Models\SecondaryLicenseCacheObject.cs" />
+        <Compile Include="src\Models\SecondaryLicenseInfo.cs" />
         <Compile Include="src\PackageLicenseFilter.cs" />
         <Compile Include="src\Models\VarPackage.cs" />
         <Compile Include="src\UI\PackagesWindow.cs" />

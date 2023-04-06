@@ -60,10 +60,11 @@ sealed class PackageLicenseFilter : ScriptBase
     }
 
     Dictionary<string, string> _packageLicenseCache;
+    Dictionary<string, SecondaryLicenseCacheObject> _packageSecondaryLicenseCache;
     HashSet<string> _alwaysEnabledPackages;
     HashSet<string> _alwaysDisabledPackages;
     readonly List<VarPackage> _varPackages = new List<VarPackage>();
-    public readonly Dictionary<string, License> licenseTypes = new Dictionary<string, License>
+    public readonly Dictionary<string, License> licenses = new Dictionary<string, License>
     {
         { License.FC.name, License.FC },
         { License.CC_BY.name, License.CC_BY },
@@ -150,6 +151,7 @@ sealed class PackageLicenseFilter : ScriptBase
             SetupStorables();
             ReadUserPreferencesFromFile();
             ReadLicenseCacheFromFile();
+            ReadSecondaryLicenseCacheFromFile();
             _alwaysEnabledPackages = new HashSet<string>(FileUtils.ReadAlwaysEnabledCache());
             _alwaysDisabledPackages = new HashSet<string>(FileUtils.ReadAlwaysDisabledCache());
             _mainWindow = new MainWindow();
@@ -281,24 +283,66 @@ sealed class PackageLicenseFilter : ScriptBase
 
     void ReadLicenseCacheFromFile()
     {
-        var cacheJson = FileUtils.ReadLicenseCacheJSON();
-        _packageLicenseCache = JSONUtils.JsonClassToStringDictionary(cacheJson);
+        var cacheJSON = FileUtils.ReadLicenseCacheJSON();
+        _packageLicenseCache = JSONUtils.JsonClassToStringDictionary(cacheJSON);
+    }
+
+    void ReadSecondaryLicenseCacheFromFile()
+    {
+        var cacheJSON = FileUtils.ReadSecondaryLicenseCacheJSON();
+        _packageSecondaryLicenseCache = new Dictionary<string, SecondaryLicenseCacheObject>();
+        if(cacheJSON != null)
+        {
+            foreach(string key in cacheJSON.Keys)
+            {
+                var secondaryLicenseJSON = cacheJSON[key].AsObject;
+                _packageSecondaryLicenseCache[key] = new SecondaryLicenseCacheObject
+                {
+                    licenseType = secondaryLicenseJSON["licenseType"].Value,
+                    activeAfterDay = secondaryLicenseJSON["day"].Value,
+                    activeAfterMonth = secondaryLicenseJSON["month"].Value,
+                    activeAfterYear = secondaryLicenseJSON["year"].Value,
+                };
+            }
+        }
     }
 
     // TODO indexing?
     void SyncLicenseCacheFile()
     {
-        var cacheJson = JSONUtils.StringDictionaryToJsonClass(_packageLicenseCache);
-        FileUtils.WriteLicenseCacheJSON(cacheJson);
+        var cacheJSON = JSONUtils.StringDictionaryToJsonClass(_packageLicenseCache);
+        FileUtils.WriteLicenseCacheJSON(cacheJSON);
+    }
+
+    // TODO indexing?
+    void SyncEAEndDateCacheFile()
+    {
+        var cacheJSON = new JSONClass();
+        if(_packageSecondaryLicenseCache != null)
+        {
+            foreach(var kvp in _packageSecondaryLicenseCache)
+            {
+                var cacheObj = kvp.Value;
+                cacheJSON[kvp.Key] = new JSONClass
+                {
+                    ["licenseType"] = cacheObj.licenseType,
+                    ["day"] = cacheObj.activeAfterDay,
+                    ["month"] = cacheObj.activeAfterMonth,
+                    ["year"] = cacheObj.activeAfterYear,
+                };
+            }
+        }
+
+        FileUtils.WriteSecondaryLicenseCacheJSON(cacheJSON);
     }
 
     void ReadUserPreferencesFromFile()
     {
-        var prefsJson = FileUtils.ReadPrefsJSON();
-        if(prefsJson != null)
+        var prefsJSON = FileUtils.ReadPrefsJSON();
+        if(prefsJSON != null)
         {
-            JSONUtils.SetStorableValueFromJson(prefsJson, addonPackagesLocationJss);
-            JSONUtils.SetStorableValueFromJson(prefsJson, alwaysEnableDefaultSessionPluginsJsb);
+            JSONUtils.SetStorableValueFromJson(prefsJSON, addonPackagesLocationJss);
+            JSONUtils.SetStorableValueFromJson(prefsJSON, alwaysEnableDefaultSessionPluginsJsb);
         }
         else
         {
@@ -341,7 +385,8 @@ sealed class PackageLicenseFilter : ScriptBase
     HashSet<string> _defaultSessionPluginPackages;
     List<string> _disabledInfoList;
     List<string> _enabledInfoList;
-    bool _cacheUpdated;
+    bool _licenseCacheUpdated;
+    bool _secondaryLicenseCacheUpdated;
     public bool requireRestart { get; private set; }
     public bool requireFixAndRestart { get; private set; }
 
@@ -357,7 +402,9 @@ sealed class PackageLicenseFilter : ScriptBase
         _defaultSessionPluginPackages = FindPackageFilenamesFromDefaultSessionPluginsJson();
         var packageJsscOptions = new List<string>();
         var packageJsscDisplayOptions = new List<string>();
-        _cacheUpdated = false;
+        _licenseCacheUpdated = false;
+        _secondaryLicenseCacheUpdated = false;
+        var dateTimeInts = new DateTimeInts(DateTime.Today);
 
         // TODO healthcheck on dir
         // TODO change dir
@@ -370,17 +417,95 @@ sealed class PackageLicenseFilter : ScriptBase
                 continue;
             }
 
+            string licenseType = null;
             bool isDisabled = FileUtils.DisabledFileExists(path);
-            string licenseType = isDisabled ? ReadDisabledPackageLicenseType(path, filename) : ReadEnabledPackageLicenseType(path, filename);
-            if(string.IsNullOrEmpty(licenseType))
+            if(_packageLicenseCache.ContainsKey(filename))
+            {
+                licenseType = _packageLicenseCache[filename];
+            }
+
+            bool needsMetaJson = licenseType == null;
+            var secondaryLicenseCacheObject = new SecondaryLicenseCacheObject();
+            if(licenseType == License.PC_EA.name)
+            {
+                if(_packageSecondaryLicenseCache.ContainsKey(filename))
+                {
+                    secondaryLicenseCacheObject = _packageSecondaryLicenseCache[filename];
+                    // Debug.Log($"{filename} cached secondary license: {secondaryLicenseCacheObject}");
+                }
+                else
+                {
+                    needsMetaJson = true;
+                }
+            }
+
+            bool metaJSONError = false;
+            if(needsMetaJson)
+            {
+                var metaJSON = GetMetaJSON(path);
+                if(metaJSON == null)
+                {
+                    _errorsInfoList.Add($"{filename}: Missing meta.json");
+                    metaJSONError = true;
+                }
+                else
+                {
+                    if(string.IsNullOrEmpty(licenseType))
+                    {
+                        if(isDisabled)
+                        {
+                            _fixablePackagePaths.Add(path);
+                            _fixablePackageNames.Add(filename);
+                        }
+                        else
+                        {
+                            licenseType = ReadLicenseTypeFromMetaJSON(metaJSON, filename);
+                        }
+                    }
+
+                    if(licenseType == License.PC_EA.name)
+                    {
+                        if(!metaJSON.HasKey("secondaryLicenseType"))
+                        {
+                            _errorsInfoList.Add($"{filename}: Missing secondaryLicenseType field in meta.json");
+                            metaJSONError = true;
+                        }
+
+                        if(!metaJSON.HasKey("EAEndDay") || !metaJSON.HasKey("EAEndMonth") || !metaJSON.HasKey("EAEndYear"))
+                        {
+                            _errorsInfoList.Add($"{filename}: Missing EAEndDay/EAEndMonth/EAEndYear field(s) in meta.json");
+                            metaJSONError = true;
+                        }
+                        else
+                        {
+                            secondaryLicenseCacheObject.licenseType = metaJSON["secondaryLicenseType"].Value;
+                            secondaryLicenseCacheObject.activeAfterDay = metaJSON["EAEndDay"].Value;
+                            secondaryLicenseCacheObject.activeAfterMonth = metaJSON["EAEndMonth"].Value;
+                            secondaryLicenseCacheObject.activeAfterYear = metaJSON["EAEndYear"].Value;
+                            _packageSecondaryLicenseCache[filename] = secondaryLicenseCacheObject;
+                            _secondaryLicenseCacheUpdated = true;
+                            // Debug.Log($"{filename} meta.json secondary license: {secondaryLicenseCacheObject}");
+                        }
+                    }
+                }
+            }
+
+            if(string.IsNullOrEmpty(licenseType) || metaJSONError)
             {
                 continue;
             }
 
-            if(!licenseTypes.ContainsKey(licenseType))
+            if(!licenses.ContainsKey(licenseType))
             {
-                _cacheUpdated = _cacheUpdated || _packageLicenseCache.Remove(filename);
+                _licenseCacheUpdated = _licenseCacheUpdated || _packageLicenseCache.Remove(filename);
                 _errorsInfoList.Add($"{filename}: Unknown license type {licenseType}");
+                continue;
+            }
+
+            if(licenseType == License.PC_EA.name && !licenses.ContainsKey(secondaryLicenseCacheObject.licenseType))
+            {
+                _secondaryLicenseCacheUpdated = _secondaryLicenseCacheUpdated || _packageSecondaryLicenseCache.Remove(filename);
+                _errorsInfoList.Add($"{filename}: Unknown secondary license type {secondaryLicenseCacheObject.licenseType}");
                 continue;
             }
 
@@ -393,12 +518,26 @@ sealed class PackageLicenseFilter : ScriptBase
             var package = new VarPackage(
                 path,
                 filename,
-                licenseTypes[licenseType],
+                licenses[licenseType],
                 !isDisabled,
                 isDefaultSessionPluginPackage,
                 _alwaysEnabledPackages.Contains(filename),
                 _alwaysDisabledPackages.Contains(filename)
             );
+
+            if(licenseType == License.PC_EA.name)
+            {
+                package.SetSecondaryLicenseInfo(
+                    new SecondaryLicenseInfo
+                    {
+                        license = licenses[secondaryLicenseCacheObject.licenseType],
+                        activeAfterDayString = secondaryLicenseCacheObject.activeAfterDay,
+                        activeAfterMonthString = secondaryLicenseCacheObject.activeAfterMonth,
+                        activeAfterYearString = secondaryLicenseCacheObject.activeAfterYear,
+                    },
+                    dateTimeInts
+                );
+            }
 
             packageJsscOptions.Add(package.filename);
             packageJsscDisplayOptions.Add(package.displayString);
@@ -414,9 +553,14 @@ sealed class PackageLicenseFilter : ScriptBase
         packageJssc.choices = packageJsscOptions;
         packageJssc.displayChoices = packageJsscDisplayOptions;
 
-        if(_cacheUpdated)
+        if(_licenseCacheUpdated)
         {
             SyncLicenseCacheFile();
+        }
+
+        if(_secondaryLicenseCacheUpdated)
+        {
+            SyncEAEndDateCacheFile();
         }
 
         requireFixAndRestart = _fixablePackageNames.Count > 0;
@@ -500,43 +644,26 @@ sealed class PackageLicenseFilter : ScriptBase
         return result;
     }
 
-    string ReadDisabledPackageLicenseType(string path, string filename)
+    JSONClass GetMetaJSON(string path)
     {
-        if(!_packageLicenseCache.ContainsKey(filename))
-        {
-            _fixablePackagePaths.Add(path);
-            _fixablePackageNames.Add(filename);
-            return null;
-        }
-
-        return _packageLicenseCache[filename];
+        string metaJsonPath = FileUtils.NormalizePackagePath(addonPackagesLocationJss.val, $"{path}:/meta.json");
+        return FileUtils.FileExists(metaJsonPath)
+            ? FileUtils.ReadJSON(metaJsonPath)
+            : null;
     }
 
-    string ReadEnabledPackageLicenseType(string path, string filename)
+    string ReadLicenseTypeFromMetaJSON(JSONClass metaJSON, string filename)
     {
-        if(_packageLicenseCache.ContainsKey(filename))
-        {
-            return _packageLicenseCache[filename];
-        }
-
-        string metaJsonPath = FileUtils.NormalizePackagePath(addonPackagesLocationJss.val, $"{path}:/meta.json");
-        if(!FileUtils.FileExists(metaJsonPath))
-        {
-            _errorsInfoList.Add($"{filename}: Missing meta.json");
-            return null;
-        }
-
         const string licenseTypeKey = "licenseType";
-        var metaJson = FileUtils.ReadJSON(metaJsonPath) ?? new JSONClass();
-        if(!metaJson.HasKey(licenseTypeKey))
+        if(!metaJSON.HasKey(licenseTypeKey))
         {
             _errorsInfoList.Add($"{filename}: Missing '{licenseTypeKey}' field in meta.json");
             return null;
         }
 
-        string licenseType = metaJson[licenseTypeKey].Value;
+        string licenseType = metaJSON[licenseTypeKey].Value;
         _packageLicenseCache[filename] = licenseType;
-        _cacheUpdated = true;
+        _licenseCacheUpdated = true;
         return licenseType;
     }
 
@@ -679,11 +806,11 @@ sealed class PackageLicenseFilter : ScriptBase
                 requireRestart = true;
                 if(package.enabled)
                 {
-                    _enabledInfoList.Add(package.displayString);
+                    _enabledInfoList.Add(package.GetLongDisplayString());
                 }
                 else
                 {
-                    _disabledInfoList.Add(package.displayString);
+                    _disabledInfoList.Add(package.GetLongDisplayString());
                 }
             }
         }

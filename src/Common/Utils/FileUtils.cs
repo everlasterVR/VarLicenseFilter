@@ -11,6 +11,7 @@ static class FileUtils
     const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
     const string PREFS_FILE = "preferences.json";
     const string LICENSE_CACHE_FILE = "license_cache.json";
+    const string SECONDARY_LICENSE_CACHE_FILE = "secondary_license_cache.json";
     const string ALWAYS_ENABLED_CACHE_FILE = "always_enabled_packages.txt";
     const string ALWAYS_DISABLED_CACHE_FILE = "always_disabled_packages.txt";
     const string TMP_ENABLED_FILE = "tmp_enabled_packages.txt";
@@ -101,6 +102,18 @@ static class FileUtils
     {
         EnsureDataDirExists();
         WriteJSON(jc, $"{DATA_DIR}/{LICENSE_CACHE_FILE}", confirmCallback);
+    }
+
+    public static JSONClass ReadSecondaryLicenseCacheJSON()
+    {
+        EnsureDataDirExists();
+        return ReadJSON($"{DATA_DIR}/{SECONDARY_LICENSE_CACHE_FILE}");
+    }
+
+    public static void WriteSecondaryLicenseCacheJSON(JSONClass jc, UserActionCallback confirmCallback = null)
+    {
+        EnsureDataDirExists();
+        WriteJSON(jc, $"{DATA_DIR}/{SECONDARY_LICENSE_CACHE_FILE}", confirmCallback);
     }
 
     public static IEnumerable<string> ReadAlwaysEnabledCache()
