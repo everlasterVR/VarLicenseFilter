@@ -36,6 +36,7 @@ sealed class SetupWindow : WindowBase
         }
         else
         {
+            AddSpacer(100, false);
             AddInfoTextField(
                 "No suitable locations found. Please setup the symlink first.",
                 false,

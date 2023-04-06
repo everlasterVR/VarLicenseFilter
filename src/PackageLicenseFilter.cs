@@ -719,7 +719,10 @@ sealed class PackageLicenseFilter : ScriptBase
             AddPreDisabledInfo(sb);
         }
 
-        filterInfoJss.val = sb.ToString();
+        /* Prevent ArgumentException: Mesh can not have more than 65000 vertices */
+        filterInfoJss.val = sb.Length > 16000
+            ? sb.ToString().Substring(0, 16000) + "\n\n... (truncated)"
+            : sb.ToString();
     }
 
     void AddPreDisabledInfo(StringBuilder sb)
