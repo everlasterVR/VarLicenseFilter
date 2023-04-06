@@ -86,7 +86,7 @@ sealed class PackageLicenseFilter : ScriptBase
     public JSONStorableString alwaysEnabledListInfoJss { get; private set; }
     public JSONStorableString alwaysDisabledListInfoJss { get; private set; }
     public JSONStorableAction applyFilterAction { get; private set; }
-    public JSONStorableAction resetStatusesAction { get; private set; }
+    public JSONStorableAction undoRunFiltersAction { get; private set; }
     public JSONStorableAction fixAndRestartAction { get; private set; }
     public JSONStorableAction restartVamAction { get; private set; }
     public JSONStorableBool alwaysEnableDefaultSessionPluginsJsb { get; private set; }
@@ -217,8 +217,8 @@ sealed class PackageLicenseFilter : ScriptBase
         addonPackagesLocationJss = new JSONStorableString("AddonPackages location", "");
         saveAndContinueAction = new JSONStorableAction("Save selected location and continue", SaveAndContinue);
         filterInfoJss = new JSONStorableString("Filter info", "");
-        alwaysEnableSelectedJsb = new JSONStorableBool("Always enable selected", false, OnToggleAlwaysEnabled);
-        alwaysDisableSelectedJsb = new JSONStorableBool("Always disable selected", false, OnToggleAlwaysDisabled);
+        alwaysEnableSelectedJsb = new JSONStorableBool("Always enable selected package", false, OnToggleAlwaysEnabled);
+        alwaysDisableSelectedJsb = new JSONStorableBool("Always disable selected package", false, OnToggleAlwaysDisabled);
         alwaysEnabledListInfoJss = new JSONStorableString("Always enabled list info", "");
         alwaysDisabledListInfoJss = new JSONStorableString("Always disabled list info", "");
         applyFilterAction = new JSONStorableAction("Run filters and preview result", () =>
@@ -226,14 +226,9 @@ sealed class PackageLicenseFilter : ScriptBase
             _applyLicenseFilter = true;
             SyncPackageStatuses();
         });
-        resetStatusesAction = new JSONStorableAction("Reset license filter", () =>
+        undoRunFiltersAction = new JSONStorableAction("Undo run filters", () =>
         {
             _applyLicenseFilter = false;
-            foreach(var kvp in licenseTypes)
-            {
-                kvp.Value.enabledJsb.val = kvp.Value.enabledJsb.defaultVal;
-            }
-
             SyncPackageStatuses();
         });
         fixAndRestartAction = new JSONStorableAction("Fix cache and restart VAM", () =>

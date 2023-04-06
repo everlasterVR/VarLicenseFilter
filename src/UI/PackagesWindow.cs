@@ -51,12 +51,14 @@ sealed class PackagesWindow : WindowBase
         AddInfoTextField("Packages that are always enabled or disabled are ignored when filtering\npackages by license type.", rightSide);
 
         AddSpacer(80, rightSide);
+
         AddElement(PackageLicenseFilter.script.alwaysEnableSelectedJsb.name, () =>
-            script.CreateToggle(PackageLicenseFilter.script.alwaysEnableSelectedJsb, rightSide));
+            script.CreateToggle(PackageLicenseFilter.script.alwaysEnableSelectedJsb, rightSide)
+        );
 
         AddElement(() =>
         {
-            var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS ENABLED PACKAGES".Bold(), 26, 40, rightSide);
+            var textField = CreateHeaderTextField("\n".Size(4) + "Always enabled packages".Bold(), 28, 40, rightSide);
             textField.UItext.alignment = TextAnchor.LowerLeft;
             textField.textColor = Colors.veryDarkGreen;
             return textField;
@@ -77,15 +79,10 @@ sealed class PackagesWindow : WindowBase
         });
     }
 
-    void UpdateScrollbarSize(ScrollRect scrollRect)
-    {
-        Canvas.ForceUpdateCanvases(); // Force an update to ensure the content size is calculated correctly
-        scrollRect.horizontalScrollbar.size = Mathf.Clamp01(scrollRect.viewport.rect.width / scrollRect.content.rect.width);
-    }
-
     void BuildRightSide(bool rightSide = true)
     {
         AddSpacer(50, rightSide);
+
         AddElement(() =>
         {
             var toggle = script.CreateToggle(PackageLicenseFilter.script.alwaysEnableDefaultSessionPluginsJsb, rightSide);
@@ -95,13 +92,15 @@ sealed class PackagesWindow : WindowBase
         });
 
         AddSpacer(100, rightSide);
+
         AddElement(PackageLicenseFilter.script.alwaysDisableSelectedJsb.name, () =>
-            script.CreateToggle(PackageLicenseFilter.script.alwaysDisableSelectedJsb, rightSide));
+            script.CreateToggle(PackageLicenseFilter.script.alwaysDisableSelectedJsb, rightSide)
+        );
 
         AddElement(() =>
         {
-            var textField = CreateHeaderTextField("\n".Size(8) + "ALWAYS DISABLED PACKAGES".Bold(), 26, 40, rightSide);
-            textField.UItext.alignment = TextAnchor.LowerLeft;
+            var textField = CreateHeaderTextField("\n".Size(4) + "Always disabled packages".Bold(), 28, 40, rightSide);
+            textField.UItext.alignment = TextAnchor.LowerRight;
             textField.textColor = Colors.veryDarkRed;
             return textField;
         });

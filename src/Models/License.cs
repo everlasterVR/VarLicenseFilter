@@ -17,7 +17,7 @@ public class License
     public string name { get; }
     public string displayName { get; }
     public JSONStorableBool enabledJsb { get; }
-    public bool isCc { get; }
+    public bool isCC { get; }
     public bool requiresAttribution { get; }
     public bool allowsRelicensing { get; }
     public bool allowsCommercialUse { get; }
@@ -31,7 +31,7 @@ public class License
 
         if(name == "FC" || name.StartsWith("CC"))
         {
-            isCc = true;
+            isCC = true;
             requiresAttribution = name.Contains("BY");
             allowsRelicensing = !name.Contains("SA");
             allowsCommercialUse = !name.Contains("NC");

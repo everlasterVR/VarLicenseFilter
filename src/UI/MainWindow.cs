@@ -53,7 +53,7 @@ sealed class MainWindow : WindowBase
 
         AddElement(() =>
         {
-            var action = PackageLicenseFilter.script.resetStatusesAction;
+            var action = PackageLicenseFilter.script.undoRunFiltersAction;
             var button = script.CreateButton(action.name, rightSide);
             action.RegisterButton(button);
             button.SetFocusedColor(Colors.lightGray);
@@ -73,40 +73,59 @@ sealed class MainWindow : WindowBase
         });
     }
 
+    /*
+     * Use cases
+     * =========
+     *
+     * 1. Creating a resource to be released for free on the Hub
+     *      - Allows free distribution
+     * 2. Creating a paid resource
+     *      - Allows commercial use
+     *      - OR Allows commercial use and free distribution
+     */
+
     void BuildRightSide(bool rightSide = true)
     {
         AddElement(() =>
         {
-            var textField = CreateHeaderTextField("\n".Size(12) + "Auto-selection", 30, 50, rightSide);
+            var textField = CreateHeaderTextField("\n".Size(12) + "Auto-selection".Bold(), 28, 50, rightSide);
+            textField.UItext.alignment = TextAnchor.MiddleLeft;
             return textField;
         });
 
         AddElement(() =>
         {
-            var button = script.CreateButton("Select all", rightSide);
+            var button = script.CreateButton("  Select all", rightSide);
             button.SetFocusedColor(Colors.lightGray);
+            button.buttonText.alignment = TextAnchor.MiddleLeft;
             button.button.onClick.AddListener(() => SelectLicenseTypes(license => true));
             return button;
         });
+
         AddElement(() =>
         {
-            var button = script.CreateButton("Allows commercial use and modification", rightSide);
+            var button = script.CreateButton("  Freely distributable (CC)", rightSide);
             button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse && license.allowsDerivatives));
+            button.buttonText.alignment = TextAnchor.MiddleLeft;
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.isCC));
             return button;
         });
+
         AddElement(() =>
         {
-            var button = script.CreateButton("Allows commercial use", rightSide);
+            var button = script.CreateButton("  Allows commercial use (CC)", rightSide);
             button.SetFocusedColor(Colors.lightGray);
+            button.buttonText.alignment = TextAnchor.MiddleLeft;
+            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.isCC && license.allowsCommercialUse));
+            return button;
+        });
+
+        AddElement(() =>
+        {
+            var button = script.CreateButton("  Allows commercial use (CC) + PC", rightSide);
+            button.SetFocusedColor(Colors.lightGray);
+            button.buttonText.alignment = TextAnchor.MiddleLeft;
             button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse));
-            return button;
-        });
-        AddElement(() =>
-        {
-            var button = script.CreateButton("Allows modification", rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsDerivatives));
             return button;
         });
 
