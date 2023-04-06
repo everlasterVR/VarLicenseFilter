@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using SimpleJSON;
@@ -11,6 +12,8 @@ sealed class VarLicenseFilter : ScriptBase
 {
     /* Public static access point to plugin instance. */
     public const string VERSION = "0.0.0";
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public static bool envIsDevelopment { get; private set; }
     public static VarLicenseFilter script { get; private set; }
 
@@ -21,6 +24,7 @@ sealed class VarLicenseFilter : ScriptBase
 
 #region *** Init ***
 
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public static bool IsInitialized()
     {
         return script.initialized == true;
@@ -31,10 +35,6 @@ sealed class VarLicenseFilter : ScriptBase
         #if ENV_DEVELOPMENT
         {
             envIsDevelopment = true;
-        }
-        #else
-        {
-            envIsDevelopment = false;
         }
         #endif
         script = this;

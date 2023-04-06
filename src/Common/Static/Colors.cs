@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Diagnostics.CodeAnalysis;
+using UnityEngine;
 
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 static class Colors
 {
     public static Color backgroundGray = new Color(0.85f, 0.85f, 0.85f);

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using MVR.FileManagementSecure;
 using SimpleJSON;
 using UnityEngine;
@@ -195,7 +194,7 @@ static class FileUtils
         return FileManagerSecure.FileExists(path) ? FileManagerSecure.ReadAllText(path) : "";
     }
 
-    public static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null)
+    static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null)
     {
         FileManagerSecure.WriteAllText(path, jc.ToString(""), confirmCallback, null, null);
     }
@@ -227,11 +226,5 @@ static class FileUtils
         {
             FileManagerSecure.CreateDirectory(DATA_DIR);
         }
-    }
-
-    /* MVR.FileManagement FileManager */
-    public static string RemovePackageFromPath(string path)
-    {
-        return Regex.Replace(Regex.Replace(path, ".*:/", string.Empty), ".*:\\\\", string.Empty);
     }
 }

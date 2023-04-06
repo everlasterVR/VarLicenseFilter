@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -82,10 +83,12 @@ class WindowBase : IWindow
     {
     }
 
+    [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
     protected virtual void OnClose()
     {
     }
 
+    [SuppressMessage("ReSharper", "MemberCanBeProtected.Global")]
     public void OnReturn()
     {
         activeNestedWindow.Clear();
@@ -194,19 +197,6 @@ class WindowBase : IWindow
         return textField;
     }
 
-    protected UIDynamicTextField CreateValueTextField(
-        JSONStorableString jss,
-        int fontSize,
-        int height,
-        bool rightSide
-    )
-    {
-        var textField = script.CreateTextField(jss, rightSide);
-        ModifyTextField(textField, fontSize, height);
-        textField.UItext.alignment = TextAnchor.MiddleLeft;
-        return textField;
-    }
-
     static void ModifyTextField(UIDynamicTextField textField, int fontSize, int height)
     {
         textField.UItext.fontSize = fontSize;
@@ -214,16 +204,6 @@ class WindowBase : IWindow
         var layout = textField.GetComponent<LayoutElement>();
         layout.preferredHeight = height;
         layout.minHeight = height;
-    }
-
-    protected void AddHeaderTextField(string text, bool rightSide)
-    {
-        AddElement(() =>
-        {
-            var textField = CreateHeaderTextField("\n".Size(20) + text.Bold(), 30, 60, rightSide);
-            textField.UItext.alignment = TextAnchor.LowerLeft;
-            return textField;
-        });
     }
 
     protected void AddInfoTextField(string text, bool rightSide, int height = 100, int fontSize = 26)

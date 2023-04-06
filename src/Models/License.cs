@@ -18,9 +18,15 @@ public class License
     public string displayName { get; }
     public JSONStorableBool enabledJsb { get; }
     public bool isCC { get; }
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public bool requiresAttribution { get; }
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public bool allowsRelicensing { get; }
     public bool allowsCommercialUse { get; }
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public bool allowsDerivatives { get; }
 
     License(string name)

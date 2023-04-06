@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-
-sealed class VarPackage
+﻿sealed class VarPackage
 {
     public string path { get; }
     public string filename { get; }
-    public License activeLicense { get; private set; }
-    public License license { get; }
+    License _activeLicense;
+    readonly License _license;
     SecondaryLicenseInfo _secondaryLicenseInfo;
     public string displayString { get; }
 
@@ -29,8 +26,8 @@ sealed class VarPackage
     {
         this.path = path;
         this.filename = filename;
-        this.license = license;
-        activeLicense = license;
+        _license = license;
+        _activeLicense = license;
         displayString = $"{filename}\u00A0[{license.displayName}]";
         _initialEnabled = enabled;
         this.enabled = _initialEnabled;
@@ -42,7 +39,7 @@ sealed class VarPackage
     public void SetSecondaryLicenseInfo(SecondaryLicenseInfo secondaryLicenseInfo, DateTimeInts today)
     {
         _secondaryLicenseInfo = secondaryLicenseInfo;
-        activeLicense = GetActiveLicense(today);
+        _activeLicense = GetActiveLicense(today);
     }
 
     public void SyncEnabled(bool applyLicenseFilter)
@@ -57,7 +54,7 @@ sealed class VarPackage
         }
         else
         {
-            enabled = applyLicenseFilter ? activeLicense.enabledJsb.val : _initialEnabled;
+            enabled = applyLicenseFilter ? _activeLicense.enabledJsb.val : _initialEnabled;
         }
 
         changed = enabled != _initialEnabled;
@@ -66,9 +63,9 @@ sealed class VarPackage
     /* See MVR.FileManagement.PackageBuilder.SyncDependencyLicenseReport */
     License GetActiveLicense(DateTimeInts today)
     {
-        if(_secondaryLicenseInfo == null || license != License.PC_EA)
+        if(_secondaryLicenseInfo == null || _license != License.PC_EA)
         {
-            return license;
+            return _license;
         }
 
         int activeAfterDay = _secondaryLicenseInfo.activeAfterDay;
@@ -96,7 +93,7 @@ sealed class VarPackage
             }
         }
 
-        return license;
+        return _license;
     }
 
     public void Disable()
@@ -107,26 +104,26 @@ sealed class VarPackage
 
     public string GetLongDisplayString()
     {
-        if(_secondaryLicenseInfo == null || license != License.PC_EA)
+        if(_secondaryLicenseInfo == null || _license != License.PC_EA)
         {
-            return $"{filename}\u00A0[{license.displayName.Bold()}]";
+            return $"{filename}\u00A0[{_license.displayName.Bold()}]";
         }
 
-        if(activeLicense == license)
+        if(_activeLicense == _license)
         {
-            string primaryLicense = license.displayName.Bold();
+            string primaryLicense = _license.displayName.Bold();
             string secondaryLicense = $"{_secondaryLicenseInfo.license.displayName} after {_secondaryLicenseInfo.GetActiveAfterDateString()}";
             return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
 
-        if(activeLicense == _secondaryLicenseInfo.license)
+        if(_activeLicense == _secondaryLicenseInfo.license)
         {
-            string primaryLicense = license.displayName;
+            string primaryLicense = _license.displayName;
             string secondaryLicense = _secondaryLicenseInfo.license.displayName.Bold();
             return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
 
-        Loggr.Error($"Unexpected active license '{activeLicense?.name}' on package {filename}.");
+        Loggr.Error($"Unexpected active license '{_activeLicense?.name}' on package {filename}.");
         return displayString;
     }
 }

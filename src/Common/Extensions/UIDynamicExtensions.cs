@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.Events;
 
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 static partial class UIDynamicExtensions
 {
     public static void AddListener(this UIDynamic element, UnityAction<bool> callback)

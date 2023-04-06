@@ -80,7 +80,6 @@
         <Compile Include="src\Bindings.cs" />
         <Compile Include="src\Common\Components\UnityEventsListener.cs" />
         <Compile Include="src\Common\Extensions\AtomExtensions.cs" />
-        <Compile Include="src\Common\Extensions\JSONStorableExtensions.cs" />
         <Compile Include="src\Common\Extensions\ListExtensions.cs" />
         <Compile Include="src\Common\Extensions\MVRScriptExtensions.cs" />
         <Compile Include="src\Common\Extensions\StringExtensions.cs" />
@@ -89,7 +88,6 @@
         <Compile Include="src\Common\ScriptBase.cs" />
         <Compile Include="src\Common\Static\Colors.cs" />
         <Compile Include="src\Common\Static\Constant.cs" />
-        <Compile Include="src\Common\Utils\Calc.cs" />
         <Compile Include="src\Common\Utils\FileUtils.cs" />
         <Compile Include="src\Common\Utils\JSONUtils.cs" />
         <Compile Include="src\Common\Utils\Loggr.cs" />
@@ -105,7 +103,6 @@
         <Compile Include="src\UI\MainWindow.cs" />
         <Compile Include="src\UI\SetupWindow.cs" />
         <Compile Include="src\UI\WindowBase.cs" />
-        <Compile Include="Vendor\vam-collider-editor\MVRScriptExtensions.cs" />
     </ItemGroup>
     <ItemGroup>
         <None Include=".gitignore" />

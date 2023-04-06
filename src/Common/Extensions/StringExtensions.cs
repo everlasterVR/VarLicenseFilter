@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 static partial class StringExtensions
 {
     public static string Bold(this string str)
