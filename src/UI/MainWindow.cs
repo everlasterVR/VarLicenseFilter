@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 sealed class MainWindow : WindowBase
 {
-    public MainWindow() : base(PackageLicenseFilter.script, nameof(MainWindow))
+    public MainWindow() : base(VarLicenseFilter.script, nameof(MainWindow))
     {
         nestedWindows.Add(new PackagesWindow(OnReturn));
     }
@@ -20,8 +20,8 @@ sealed class MainWindow : WindowBase
             rectTransform.anchoredPosition = new Vector2(10, -1220);
             rectTransform.sizeDelta = new Vector2(-15, 685);
             var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-            textField.text = PackageLicenseFilter.script.filterInfoJss.val;
-            PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
+            textField.text = VarLicenseFilter.script.filterInfoJss.val;
+            VarLicenseFilter.script.AddTextFieldToJss(textField, VarLicenseFilter.script.filterInfoJss);
             textField.UItext.fontSize = 26;
             textField.backgroundColor = Color.white;
             textField.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -37,7 +37,7 @@ sealed class MainWindow : WindowBase
 
     void BuildLeftSide(bool rightSide = false)
     {
-        var list = PackageLicenseFilter.script.licenses.Values.ToList();
+        var list = VarLicenseFilter.script.licenses.Values.ToList();
         int leftCount = 0;
         int rightCount = 0;
         for(int i = 0; i < list.Count; i++)
@@ -59,22 +59,22 @@ sealed class MainWindow : WindowBase
 
         AddElement(() =>
         {
-            var action = PackageLicenseFilter.script.undoRunFiltersAction;
+            var action = VarLicenseFilter.script.undoRunFiltersAction;
             var button = script.CreateButton(action.name, rightSide);
             action.RegisterButton(button);
             button.SetFocusedColor(Colors.lightGray);
-            button.SetActiveStyle(!PackageLicenseFilter.script.requireFixAndRestart, true);
+            button.SetActiveStyle(!VarLicenseFilter.script.requireFixAndRestart, true);
             return button;
         });
 
         AddElement(() =>
         {
-            var action = PackageLicenseFilter.script.applyFilterAction;
+            var action = VarLicenseFilter.script.applyFilterAction;
             var button = script.CreateButton(action.name, rightSide);
             action.RegisterButton(button);
             button.height = 100;
             button.SetFocusedColor(Colors.lightGray);
-            button.SetActiveStyle(!PackageLicenseFilter.script.requireFixAndRestart, true);
+            button.SetActiveStyle(!VarLicenseFilter.script.requireFixAndRestart, true);
             return button;
         });
     }
@@ -140,7 +140,7 @@ sealed class MainWindow : WindowBase
         AddElement(() =>
         {
             var button = script.CreateButton("Manage individual packages", rightSide);
-            if(PackageLicenseFilter.script.requireFixAndRestart)
+            if(VarLicenseFilter.script.requireFixAndRestart)
             {
                 button.SetActiveStyle(false, true);
             }
@@ -158,9 +158,9 @@ sealed class MainWindow : WindowBase
             return button;
         });
 
-        if(PackageLicenseFilter.script.requireFixAndRestart)
+        if(VarLicenseFilter.script.requireFixAndRestart)
         {
-            var action = PackageLicenseFilter.script.fixAndRestartAction;
+            var action = VarLicenseFilter.script.fixAndRestartAction;
             AddElement(action.name, () =>
             {
                 var button = script.CreateButton(action.name, rightSide);
@@ -172,7 +172,7 @@ sealed class MainWindow : WindowBase
         }
         else
         {
-            var action = PackageLicenseFilter.script.restartVamAction;
+            var action = VarLicenseFilter.script.restartVamAction;
             AddElement(action.name, () =>
             {
                 var button = script.CreateButton(action.name, rightSide);
@@ -192,7 +192,7 @@ sealed class MainWindow : WindowBase
         var versionJss = new JSONStorableString("version", "");
         var versionTextField = CreateVersionTextField(versionJss);
         AddElement(versionTextField);
-        PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
+        VarLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
     }
 
     void AddLicenseToggle(License license, float posX, float posY)
@@ -208,17 +208,17 @@ sealed class MainWindow : WindowBase
             var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
             toggle.label = license.name;
             toggle.SetFocusedColor(Colors.lightGray);
-            PackageLicenseFilter.script.AddToggleToJsb(toggle, license.enabledJsb);
+            VarLicenseFilter.script.AddToggleToJsb(toggle, license.enabledJsb);
             return toggle;
         });
     }
 
     public void RefreshRestartButton()
     {
-        var button = GetElementAs<UIDynamicButton>(PackageLicenseFilter.script.restartVamAction.name);
+        var button = GetElementAs<UIDynamicButton>(VarLicenseFilter.script.restartVamAction.name);
         if(button)
         {
-            bool active = PackageLicenseFilter.script.requireRestart;
+            bool active = VarLicenseFilter.script.requireRestart;
             button.SetActiveStyle(active, true);
             button.buttonColor = active ? Colors.buttonRed : Colors.buttonGray;
         }
@@ -228,7 +228,7 @@ sealed class MainWindow : WindowBase
 
     static void SelectLicenseTypes(LicenseFilter filter)
     {
-        foreach(var kvp in PackageLicenseFilter.script.licenses)
+        foreach(var kvp in VarLicenseFilter.script.licenses)
         {
             var license = kvp.Value;
             license.enabledJsb.val = filter(license);

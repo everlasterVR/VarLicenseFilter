@@ -1,7 +1,7 @@
 {
   "licenseType": "PC",
   "creatorName": "everlaster",
-  "packageName": "PackageLicenseFilter",
+  "packageName": "VarLicenseFilter",
   "standardReferenceVersionOption": "Latest",
   "scriptReferenceVersionOption": "Exact",
   "description": "v0.0.0. ",
@@ -10,8 +10,8 @@
   "promotionalLink": "",
   "programVersion": "1.22.0.1",
   "contentList": [
-    "Custom/Scripts/everlaster/PackageLicenseFilter/PackageLicenseFilter.cslist",
-    "Custom/Scripts/everlaster/PackageLicenseFilter/src"
+    "Custom/Scripts/everlaster/VarLicenseFilter/VarLicenseFilter.cslist",
+    "Custom/Scripts/everlaster/VarLicenseFilter/src"
   ],
   "dependencies": {
   },

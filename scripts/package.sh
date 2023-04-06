@@ -3,7 +3,7 @@
 set -e
 
 author_name=everlaster
-resource_name=PackageLicenseFilter
+resource_name=VarLicenseFilter
 
 package_version=$1
 [ -z "$package_version" ] && printf "Usage: ./package.sh [var package version]\n" && exit 1

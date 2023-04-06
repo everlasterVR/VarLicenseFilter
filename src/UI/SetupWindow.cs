@@ -3,7 +3,7 @@ using UnityEngine;
 
 sealed class SetupWindow : WindowBase
 {
-    public SetupWindow() : base(PackageLicenseFilter.script, nameof(SetupWindow))
+    public SetupWindow() : base(VarLicenseFilter.script, nameof(SetupWindow))
     {
     }
 
@@ -25,11 +25,11 @@ sealed class SetupWindow : WindowBase
             textField.UItext.fontSize = 32;
             textField.height = 60;
             textField.backgroundColor = Color.clear;
-            PackageLicenseFilter.script.AddTextFieldToJss(textField, jss);
+            VarLicenseFilter.script.AddTextFieldToJss(textField, jss);
             return textField;
         });
 
-        var paths = PackageLicenseFilter.script.addonPackagesDirPaths;
+        var paths = VarLicenseFilter.script.addonPackagesDirPaths;
         if(paths.Count > 0)
         {
             BuildSection(paths);
@@ -50,7 +50,7 @@ sealed class SetupWindow : WindowBase
             var versionJss = new JSONStorableString("version", "");
             var versionTextField = CreateVersionTextField(versionJss);
             AddElement(versionTextField);
-            PackageLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
+            VarLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
         }
 
         Refresh();
@@ -76,14 +76,14 @@ sealed class SetupWindow : WindowBase
                 button.height = 60;
                 button.button.onClick.AddListener(() =>
                 {
-                    PackageLicenseFilter.script.addonPackagesLocationJss.val = path;
+                    VarLicenseFilter.script.addonPackagesLocationJss.val = path;
                     Refresh();
                 });
                 return button;
             });
         }
 
-        var action = PackageLicenseFilter.script.saveAndContinueAction;
+        var action = VarLicenseFilter.script.saveAndContinueAction;
         AddElement(action.name, () =>
         {
             var parent = script.UITransform.Find("Scroll View/Viewport/Content");
@@ -104,21 +104,21 @@ sealed class SetupWindow : WindowBase
 
     void Refresh()
     {
-        foreach(string path in PackageLicenseFilter.script.addonPackagesDirPaths)
+        foreach(string path in VarLicenseFilter.script.addonPackagesDirPaths)
         {
             var button = GetElementAs<UIDynamicButton>(path);
             if(button)
             {
-                button.label = path == PackageLicenseFilter.script.addonPackagesLocationJss.val
+                button.label = path == VarLicenseFilter.script.addonPackagesLocationJss.val
                     ? "  > ".Bold() + path
                     : "  " + path;
             }
         }
 
-        var saveButton = GetElement(PackageLicenseFilter.script.saveAndContinueAction.name);
+        var saveButton = GetElement(VarLicenseFilter.script.saveAndContinueAction.name);
         if(saveButton)
         {
-            bool optionIsSelected = !string.IsNullOrEmpty(PackageLicenseFilter.script.addonPackagesLocationJss.val);
+            bool optionIsSelected = !string.IsNullOrEmpty(VarLicenseFilter.script.addonPackagesLocationJss.val);
             saveButton.SetActiveStyle(optionIsSelected, true);
         }
     }

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 sealed class PackagesWindow : WindowBase
 {
-    public PackagesWindow(UnityAction onReturnToParent) : base(PackageLicenseFilter.script, nameof(PackagesWindow), onReturnToParent)
+    public PackagesWindow(UnityAction onReturnToParent) : base(VarLicenseFilter.script, nameof(PackagesWindow), onReturnToParent)
     {
     }
 
@@ -20,7 +20,7 @@ sealed class PackagesWindow : WindowBase
             rectTransform.sizeDelta = new Vector2(-10, 100);
             var popup = popupTransform.GetComponent<UIDynamicPopup>();
             popup.popupPanelHeight = 510;
-            PackageLicenseFilter.script.AddPopupToJssc(popup, PackageLicenseFilter.script.packageJssc);
+            VarLicenseFilter.script.AddPopupToJssc(popup, VarLicenseFilter.script.packageJssc);
             popup.popup.onValueChangeHandlers += RefreshToggles;
             return popup;
         });
@@ -33,17 +33,17 @@ sealed class PackagesWindow : WindowBase
             rectTransform.anchoredPosition = new Vector2(10, -1220);
             rectTransform.sizeDelta = new Vector2(-15, 425);
             var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-            textField.text = PackageLicenseFilter.script.filterInfoJss.val;
-            PackageLicenseFilter.script.AddTextFieldToJss(textField, PackageLicenseFilter.script.filterInfoJss);
+            textField.text = VarLicenseFilter.script.filterInfoJss.val;
+            VarLicenseFilter.script.AddTextFieldToJss(textField, VarLicenseFilter.script.filterInfoJss);
             textField.UItext.fontSize = 26;
             textField.backgroundColor = Color.white;
             return textField;
         });
         BuildLeftSide();
         BuildRightSide();
-        PackageLicenseFilter.script.UpdateAlwaysEnabledListInfoText();
-        PackageLicenseFilter.script.UpdateAlwaysDisabledListInfoText();
-        RefreshToggles(PackageLicenseFilter.script.packageJssc.val);
+        VarLicenseFilter.script.UpdateAlwaysEnabledListInfoText();
+        VarLicenseFilter.script.UpdateAlwaysDisabledListInfoText();
+        RefreshToggles(VarLicenseFilter.script.packageJssc.val);
     }
 
     void BuildLeftSide(bool rightSide = false)
@@ -52,8 +52,8 @@ sealed class PackagesWindow : WindowBase
 
         AddSpacer(80, rightSide);
 
-        AddElement(PackageLicenseFilter.script.alwaysEnableSelectedJsb.name, () =>
-            script.CreateToggle(PackageLicenseFilter.script.alwaysEnableSelectedJsb, rightSide)
+        AddElement(VarLicenseFilter.script.alwaysEnableSelectedJsb.name, () =>
+            script.CreateToggle(VarLicenseFilter.script.alwaysEnableSelectedJsb, rightSide)
         );
 
         AddElement(() =>
@@ -66,7 +66,7 @@ sealed class PackagesWindow : WindowBase
 
         AddElement(() =>
         {
-            var textField = script.CreateTextField(PackageLicenseFilter.script.alwaysEnabledListInfoJss, rightSide);
+            var textField = script.CreateTextField(VarLicenseFilter.script.alwaysEnabledListInfoJss, rightSide);
             textField.height = 376;
             textField.UItext.fontSize = 26;
             textField.UItext.alignment = TextAnchor.UpperLeft;
@@ -85,7 +85,7 @@ sealed class PackagesWindow : WindowBase
 
         AddElement(() =>
         {
-            var toggle = script.CreateToggle(PackageLicenseFilter.script.alwaysEnableDefaultSessionPluginsJsb, rightSide);
+            var toggle = script.CreateToggle(VarLicenseFilter.script.alwaysEnableDefaultSessionPluginsJsb, rightSide);
             toggle.height = 80;
             toggle.label = "Always enable default session\nplugin packages".Color(Colors.sessionPluginColor);
             return toggle;
@@ -93,8 +93,8 @@ sealed class PackagesWindow : WindowBase
 
         AddSpacer(100, rightSide);
 
-        AddElement(PackageLicenseFilter.script.alwaysDisableSelectedJsb.name, () =>
-            script.CreateToggle(PackageLicenseFilter.script.alwaysDisableSelectedJsb, rightSide)
+        AddElement(VarLicenseFilter.script.alwaysDisableSelectedJsb.name, () =>
+            script.CreateToggle(VarLicenseFilter.script.alwaysDisableSelectedJsb, rightSide)
         );
 
         AddElement(() =>
@@ -107,7 +107,7 @@ sealed class PackagesWindow : WindowBase
 
         AddElement(() =>
         {
-            var textField = script.CreateTextField(PackageLicenseFilter.script.alwaysDisabledListInfoJss, rightSide);
+            var textField = script.CreateTextField(VarLicenseFilter.script.alwaysDisabledListInfoJss, rightSide);
             textField.height = 376;
             textField.UItext.fontSize = 26;
             textField.UItext.alignment = TextAnchor.UpperLeft;
@@ -122,15 +122,15 @@ sealed class PackagesWindow : WindowBase
 
     void RefreshToggles(string packageFileName)
     {
-        var enableToggle = GetElementAs<UIDynamicToggle>(PackageLicenseFilter.script.alwaysEnableSelectedJsb.name);
-        var disableToggle = GetElementAs<UIDynamicToggle>(PackageLicenseFilter.script.alwaysDisableSelectedJsb.name);
+        var enableToggle = GetElementAs<UIDynamicToggle>(VarLicenseFilter.script.alwaysEnableSelectedJsb.name);
+        var disableToggle = GetElementAs<UIDynamicToggle>(VarLicenseFilter.script.alwaysDisableSelectedJsb.name);
         if(!enableToggle || !disableToggle)
         {
             Loggr.Error($"Error refreshing toggles. Enable toggle null: {enableToggle == null}, disable toggle null: {disableToggle == null}");
             return;
         }
 
-        bool isSelected = !string.IsNullOrEmpty(packageFileName) && packageFileName != PackageLicenseFilter.script.packageJssc.defaultVal;
+        bool isSelected = !string.IsNullOrEmpty(packageFileName) && packageFileName != VarLicenseFilter.script.packageJssc.defaultVal;
         enableToggle.SetActiveStyle(isSelected, true);
         disableToggle.SetActiveStyle(isSelected, true);
     }

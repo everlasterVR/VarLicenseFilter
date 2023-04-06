@@ -7,12 +7,12 @@ using System.Text;
 using SimpleJSON;
 using UnityEngine;
 
-sealed class PackageLicenseFilter : ScriptBase
+sealed class VarLicenseFilter : ScriptBase
 {
     /* Public static access point to plugin instance. */
     public const string VERSION = "0.0.0";
     public static bool envIsDevelopment { get; private set; }
-    public static PackageLicenseFilter script { get; private set; }
+    public static VarLicenseFilter script { get; private set; }
 
     public override bool ShouldIgnore()
     {
@@ -44,9 +44,9 @@ sealed class PackageLicenseFilter : ScriptBase
             /* Used to store version in save JSON and communicate version to other plugin instances */
             this.NewJSONStorableString(Constant.VERSION, VERSION);
 
-            if(containingAtom.FindStorablesByRegexMatch(Utils.NewRegex($@"^plugin#\d+_{nameof(PackageLicenseFilter)}")).Count > 0)
+            if(containingAtom.FindStorablesByRegexMatch(Utils.NewRegex($@"^plugin#\d+_{nameof(VarLicenseFilter)}")).Count > 0)
             {
-                FailInitWithMessage($"An instance of {nameof(PackageLicenseFilter)} is already added.");
+                FailInitWithMessage($"An instance of {nameof(VarLicenseFilter)} is already added.");
                 return;
             }
 
@@ -374,7 +374,7 @@ sealed class PackageLicenseFilter : ScriptBase
         }
 
         bindings = gameObject.AddComponent<Bindings>();
-        bindings.Init(this, nameof(PackageLicenseFilter));
+        bindings.Init(this, nameof(VarLicenseFilter));
     }
 
     List<string> _preDisabledInfoList;
@@ -411,7 +411,7 @@ sealed class PackageLicenseFilter : ScriptBase
         foreach(string path in FileUtils.FindVarFilePaths(addonPackagesLocationJss.val))
         {
             string filename = Utils.BaseName(path);
-            if(filename.StartsWith($"everlaster.{nameof(PackageLicenseFilter)}."))
+            if(filename.StartsWith($"everlaster.{nameof(VarLicenseFilter)}."))
             {
                 continue;
             }
@@ -581,7 +581,7 @@ sealed class PackageLicenseFilter : ScriptBase
             sb.Append(_fixablePackageNames.Count);
             sb.AppendLine(
                 " disabled package(s) are missing cached license info. Click the button above to temporarily" +
-                $" enable these packages, allowing {nameof(PackageLicenseFilter)} to cache their license info.\n"
+                $" enable these packages, allowing {nameof(VarLicenseFilter)} to cache their license info.\n"
             );
             sb.AppendLine(
                 "The next time the plugin is initialized, these packages will be automatically added to the" +
@@ -627,7 +627,7 @@ sealed class PackageLicenseFilter : ScriptBase
                 foreach(string key in plugins.Keys)
                 {
                     string scriptFilename = plugins[key].Value;
-                    if(scriptFilename.StartsWith($"everlaster.{nameof(PackageLicenseFilter)}."))
+                    if(scriptFilename.StartsWith($"everlaster.{nameof(VarLicenseFilter)}."))
                     {
                         continue;
                     }

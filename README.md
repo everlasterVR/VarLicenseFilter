@@ -1,2 +1,2 @@
-# PackageLicenseFilter Virt-A-Mate Plugin
+# VarLicenseFilter Virt-A-Mate Plugin
 

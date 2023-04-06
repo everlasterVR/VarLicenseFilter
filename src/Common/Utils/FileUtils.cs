@@ -8,7 +8,7 @@ using UnityEngine;
 
 static class FileUtils
 {
-    const string DATA_DIR = "Custom/PluginData/everlaster/PackageLicenseFilter";
+    const string DATA_DIR = "Custom/PluginData/everlaster/VarLicenseFilter";
     const string PREFS_FILE = "preferences.json";
     const string LICENSE_CACHE_FILE = "license_cache.json";
     const string SECONDARY_LICENSE_CACHE_FILE = "secondary_license_cache.json";
