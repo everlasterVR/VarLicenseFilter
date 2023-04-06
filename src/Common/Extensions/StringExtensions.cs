@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 static partial class StringExtensions
 {
@@ -25,5 +26,13 @@ static partial class StringExtensions
     public static string Color(this string str, Color color)
     {
         return str.Color($"#{ColorUtility.ToHtmlStringRGB(color)}");
+    }
+
+    public static string ReplaceLastOccurrence(this string str, string oldValue, string newValue)
+    {
+        int index = str.LastIndexOf(oldValue, StringComparison.Ordinal);
+        return index == -1
+            ? str
+            : str.Remove(index, oldValue.Length).Insert(index, newValue);
     }
 }

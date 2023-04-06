@@ -383,8 +383,6 @@ sealed class PackageLicenseFilter : ScriptBase
     List<string> _fixablePackagePaths;
     List<string> _tmpEnabledPackageNames;
     HashSet<string> _defaultSessionPluginPackages;
-    List<string> _disabledInfoList;
-    List<string> _enabledInfoList;
     bool _licenseCacheUpdated;
     bool _secondaryLicenseCacheUpdated;
     public bool requireRestart { get; private set; }
@@ -545,7 +543,7 @@ sealed class PackageLicenseFilter : ScriptBase
 
             if(isDisabled)
             {
-                _preDisabledInfoList.Add(package.displayString);
+                _preDisabledInfoList.Add(package.GetLongDisplayString());
             }
 
             tmpPackagesList.Add(package);
@@ -670,6 +668,8 @@ sealed class PackageLicenseFilter : ScriptBase
         return licenseType;
     }
 
+    List<string> _enabledInfoList = new List<string>();
+    List<string> _disabledInfoList = new List<string>();
     // static int _lineCount;
     static int _extraLineCount;
 
@@ -684,60 +684,91 @@ sealed class PackageLicenseFilter : ScriptBase
         {
             if(_tmpEnabledPackageNames.Count > 0)
             {
-                AddLine(sb,
-                    "Some initially disabled packages were temporarily enabled in order to update their license info to cache." +
-                    " These should be visible below in the list of packages to disable.\n"
+                sb.Append(
+                    "Some initially disabled packages were temporarily enabled in order to update their license\n" +
+                    "info to cache. These should be visible below in the list of packages to disable.\n"
                 );
             }
 
-            int toEnableCount = _enabledInfoList?.Count ?? 0;
-            if(_enabledInfoList != null && toEnableCount > 0)
-            {
-                AddLine(sb, $"{toEnableCount} package(s) will be enabled:\n");
-                foreach(string line in _enabledInfoList)
-                {
-                    AddLine(sb, line);
-                }
-
-                AddLine(sb);
-            }
-
-            int toDisableCount = _disabledInfoList?.Count ?? 0;
-            if(_disabledInfoList != null && toDisableCount > 0)
-            {
-                string willBeDisabledText = $"{toDisableCount} package(s) will be disabled";
-                int totalDisabledCount = _preDisabledInfoList.Count - toEnableCount;
-                if(totalDisabledCount > 0)
-                {
-                    willBeDisabledText += $" (in addition to {totalDisabledCount} already disabled)";
-                }
-
-                AddLine(sb, $"{willBeDisabledText}:\n");
-                foreach(string line in _disabledInfoList)
-                {
-                    AddLine(sb, line);
-                }
-
-                AddLine(sb);
-            }
-
-            AddErrorsInfo(sb);
-
-            if(toEnableCount == 0 && toDisableCount == 0)
+            if(_enabledInfoList.Count == 0 && _disabledInfoList.Count == 0)
             {
                 AddLine(sb, "No changes.\n");
                 AddPreDisabledInfo(sb);
             }
+            else
+            {
+                sb.AppendLine(SummaryLine());
+
+                if(_enabledInfoList.Count > 0)
+                {
+                    if(_disabledInfoList.Count > 0 || _errorsInfoList.Count > 0)
+                    {
+                        AddLine(sb, $"Package{(_enabledInfoList.Count > 1 ? "s" : "")} to enable:\n");
+                    }
+
+                    foreach(string line in _enabledInfoList)
+                    {
+                        AddLine(sb, line);
+                    }
+
+                    AddLine(sb);
+                }
+
+                if(_disabledInfoList.Count > 0)
+                {
+                    if(_enabledInfoList.Count > 0 || _errorsInfoList.Count > 0)
+                    {
+                        AddLine(sb, $"Package{(_disabledInfoList.Count > 1 ? "s" : "")} to disable:\n");
+                    }
+
+                    foreach(string line in _disabledInfoList)
+                    {
+                        AddLine(sb, line);
+                    }
+
+                    AddLine(sb);
+                }
+            }
+
+            AddErrorsInfo(sb);
         }
         else
         {
-            AddErrorsInfo(sb);
             AddPreDisabledInfo(sb);
+            AddErrorsInfo(sb);
         }
 
         filterInfoJss.val = _extraLineCount > 0
             ? sb + $"\n... {_extraLineCount} more rows (truncated)"
             : sb.ToString();
+    }
+
+    string SummaryLine()
+    {
+        var list = new List<string>();
+        if(_enabledInfoList.Count > 0)
+        {
+            list.Add($"{_enabledInfoList.Count} package{(_enabledInfoList.Count > 1 ? "s" : "")} will be enabled");
+        }
+
+        if(_disabledInfoList.Count > 0)
+        {
+            string willBeDisabledText = $"{_disabledInfoList.Count} package{(_disabledInfoList.Count > 1 ? "s" : "")} will be disabled";
+            int totalDisabledCount = _preDisabledInfoList.Count - _enabledInfoList.Count;
+            if(totalDisabledCount > 0)
+            {
+                willBeDisabledText += $" (in addition to {totalDisabledCount} already disabled)";
+            }
+
+            list.Add(willBeDisabledText);
+        }
+
+        if(_errorsInfoList.Count > 0)
+        {
+            list.Add($"{_errorsInfoList.Count} package{(_errorsInfoList.Count > 1 ? "s" : "")} have error(s)");
+        }
+
+        return string.Join(", ", list.ToArray()).ReplaceLastOccurrence(", ", " and ") + ".\n";
     }
 
     static void AddLine(StringBuilder sb, string str = "")
@@ -758,7 +789,7 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         if(_preDisabledInfoList.Count > 0)
         {
-            AddLine(sb, $"{_preDisabledInfoList.Count} package(s) are currently disabled:\n");
+            AddLine(sb, $"{_preDisabledInfoList.Count} package{(_preDisabledInfoList.Count > 1 ? "s" : "")} currently disabled:\n");
             foreach(string line in _preDisabledInfoList)
             {
                 AddLine(sb, line);
@@ -776,7 +807,7 @@ sealed class PackageLicenseFilter : ScriptBase
     {
         if(_errorsInfoList.Count > 0)
         {
-            AddLine(sb, $"{_errorsInfoList.Count} package(s) have errors:\n");
+            AddLine(sb, $"Package{(_errorsInfoList.Count > 1 ? "s" : "")} with errors:\n");
             foreach(string line in _errorsInfoList)
             {
                 AddLine(sb, line);
