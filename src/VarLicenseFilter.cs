@@ -441,22 +441,22 @@ sealed class VarLicenseFilter : ScriptBase
                 var metaJSON = GetMetaJSON(path);
                 if(metaJSON == null)
                 {
-                    _errorsInfoList.Add($"{filename}: Missing meta.json");
-                    metaJSONError = true;
+                    if(string.IsNullOrEmpty(licenseType) && isDisabled)
+                    {
+                        _fixablePackagePaths.Add(path);
+                        _fixablePackageNames.Add(filename);
+                    }
+                    else
+                    {
+                        _errorsInfoList.Add($"{filename}: Missing meta.json");
+                        metaJSONError = true;
+                    }
                 }
                 else
                 {
                     if(string.IsNullOrEmpty(licenseType))
                     {
-                        if(isDisabled)
-                        {
-                            _fixablePackagePaths.Add(path);
-                            _fixablePackageNames.Add(filename);
-                        }
-                        else
-                        {
-                            licenseType = ReadLicenseTypeFromMetaJSON(metaJSON, filename);
-                        }
+                        licenseType = ReadLicenseTypeFromMetaJSON(metaJSON, filename);
                     }
 
                     if(licenseType == License.PC_EA.name)
@@ -577,12 +577,12 @@ sealed class VarLicenseFilter : ScriptBase
             sb.Append("\n".Size(8));
             sb.Append(_fixablePackageNames.Count);
             sb.AppendLine(
-                " disabled package(s) are missing cached license info. Click the button above to temporarily" +
-                $" enable these packages, allowing {nameof(VarLicenseFilter)} to cache their license info.\n"
+                " disabled package(s) are missing cached license info. Click the button above to temporarily\n" +
+                $"enable these packages, allowing {nameof(VarLicenseFilter)} to cache their license info.\n"
             );
             sb.AppendLine(
-                "The next time the plugin is initialized, these packages will be automatically added to the" +
-                " list of packages to be disabled.\n"
+                "The next time the plugin is initialized, these packages will be automatically added to the list\n" +
+                "of packages to be disabled. (Another restart will be required to actually disable them.)\n"
             );
             sb.AppendLine(string.Join("\n", _fixablePackageNames.ToArray()));
             sb.AppendLine("");
@@ -681,7 +681,7 @@ sealed class VarLicenseFilter : ScriptBase
         {
             if(_tmpEnabledPackageNames.Count > 0)
             {
-                sb.Append(
+                sb.AppendLine(
                     "Some initially disabled packages were temporarily enabled in order to update their license\n" +
                     "info to cache. These should be visible below in the list of packages to disable.\n"
                 );

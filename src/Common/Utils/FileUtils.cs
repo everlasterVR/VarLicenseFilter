@@ -227,7 +227,6 @@ static class FileUtils
 
     public static void DeleteDisabledFile(string packagePath)
     {
-        Debug.Log($"deleting disabled file: {packagePath}.{DISABLED_EXT}");
         FileManagerSecure.DeleteFile($"{packagePath}.{DISABLED_EXT}");
     }
 
