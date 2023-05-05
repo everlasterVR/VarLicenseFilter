@@ -1,14 +1,14 @@
 {
-  "licenseType": "PC",
+  "licenseType": "CC BY-SA",
   "creatorName": "everlaster",
   "packageName": "VarLicenseFilter",
   "standardReferenceVersionOption": "Latest",
   "scriptReferenceVersionOption": "Exact",
-  "description": "v0.0.0. ",
+  "description": "v0.0.0. Enable and disable AddonPackages by license type.",
   "credits": "",
-  "instructions": "",
-  "promotionalLink": "",
-  "programVersion": "1.22.0.1",
+  "instructions": "Add to session plugins. 1. Select license types, 2. Apply, 3. Restart VAM.",
+  "promotionalLink": "https://patreon.com/everlaster",
+  "programVersion": "1.22.0.2",
   "contentList": [
     "Custom/Scripts/everlaster/VarLicenseFilter/VarLicenseFilter.cslist",
     "Custom/Scripts/everlaster/VarLicenseFilter/src"
