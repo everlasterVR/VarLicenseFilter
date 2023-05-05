@@ -3,7 +3,7 @@ using UnityEngine;
 
 sealed class SetupWindow : WindowBase
 {
-    public SetupWindow() : base(VarLicenseFilter.script, nameof(SetupWindow))
+    public SetupWindow() : base(VarLicenseFilter.Script, nameof(SetupWindow))
     {
     }
 
@@ -25,11 +25,11 @@ sealed class SetupWindow : WindowBase
             textField.UItext.fontSize = 32;
             textField.height = 60;
             textField.backgroundColor = Color.clear;
-            VarLicenseFilter.script.AddTextFieldToJss(textField, jss);
+            VarLicenseFilter.Script.AddTextFieldToJss(textField, jss);
             return textField;
         });
 
-        var paths = VarLicenseFilter.script.addonPackagesDirPaths;
+        var paths = VarLicenseFilter.Script.AddonPackagesDirPaths;
         if(paths.Count > 0)
         {
             BuildSection(paths);
@@ -50,7 +50,7 @@ sealed class SetupWindow : WindowBase
             var versionJss = new JSONStorableString("version", "");
             var versionTextField = CreateVersionTextField(versionJss);
             AddElement(versionTextField);
-            VarLicenseFilter.script.AddTextFieldToJss(versionTextField, versionJss);
+            VarLicenseFilter.Script.AddTextFieldToJss(versionTextField, versionJss);
         }
 
         Refresh();
@@ -76,14 +76,14 @@ sealed class SetupWindow : WindowBase
                 button.height = 60;
                 button.button.onClick.AddListener(() =>
                 {
-                    VarLicenseFilter.script.addonPackagesLocationJss.val = path;
+                    VarLicenseFilter.Script.AddonPackagesLocationJss.val = path;
                     Refresh();
                 });
                 return button;
             });
         }
 
-        var action = VarLicenseFilter.script.saveAndContinueAction;
+        var action = VarLicenseFilter.Script.SaveAndContinueAction;
         AddElement(action.name, () =>
         {
             var parent = script.UITransform.Find("Scroll View/Viewport/Content");
@@ -104,21 +104,21 @@ sealed class SetupWindow : WindowBase
 
     void Refresh()
     {
-        foreach(string path in VarLicenseFilter.script.addonPackagesDirPaths)
+        foreach(string path in VarLicenseFilter.Script.AddonPackagesDirPaths)
         {
             var button = GetElementAs<UIDynamicButton>(path);
             if(button)
             {
-                button.label = path == VarLicenseFilter.script.addonPackagesLocationJss.val
+                button.label = path == VarLicenseFilter.Script.AddonPackagesLocationJss.val
                     ? "  > ".Bold() + path
                     : "  " + path;
             }
         }
 
-        var saveButton = GetElement(VarLicenseFilter.script.saveAndContinueAction.name);
+        var saveButton = GetElement(VarLicenseFilter.Script.SaveAndContinueAction.name);
         if(saveButton)
         {
-            bool optionIsSelected = !string.IsNullOrEmpty(VarLicenseFilter.script.addonPackagesLocationJss.val);
+            bool optionIsSelected = !string.IsNullOrEmpty(VarLicenseFilter.Script.AddonPackagesLocationJss.val);
             saveButton.SetActiveStyle(optionIsSelected, true);
         }
     }

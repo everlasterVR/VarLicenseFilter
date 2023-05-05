@@ -2,14 +2,14 @@ using System;
 
 struct DateTimeInts
 {
-    public int day { get; }
-    public int month { get; }
-    public int year { get; }
+    public int Day { get; }
+    public int Month { get; }
+    public int Year { get; }
 
     public DateTimeInts(DateTime date)
     {
-        day = date.Day;
-        month = date.Month;
-        year = date.Year;
+        Day = date.Day;
+        Month = date.Month;
+        Year = date.Year;
     }
 }

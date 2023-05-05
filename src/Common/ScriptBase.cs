@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 class ScriptBase : MVRScript
 {
-    UnityEventsListener pluginUIEventsListener { get; set; }
+    UnityEventsListener PluginUIEventsListener { get; set; }
 
     // Prevent ScriptBase from showing up as a plugin in Plugins tab
     public override bool ShouldIgnore()
@@ -18,7 +18,7 @@ class ScriptBase : MVRScript
     public override void InitUI()
     {
         base.InitUI();
-        if(!UITransform || pluginUIEventsListener)
+        if(!UITransform || PluginUIEventsListener)
         {
             return;
         }
@@ -40,15 +40,15 @@ class ScriptBase : MVRScript
 
     IEnumerator InitUICo()
     {
-        pluginUIEventsListener = UITransform.gameObject.AddComponent<UnityEventsListener>();
-        pluginUIEventsListener.onEnable.AddListener(() => StartCoroutine(OnUIEnabledCo(OnUIEnabled())));
+        PluginUIEventsListener = UITransform.gameObject.AddComponent<UnityEventsListener>();
+        PluginUIEventsListener.OnEnableEvent.AddListener(() => StartCoroutine(OnUIEnabledCo(OnUIEnabled())));
 
-        while(initialized == null)
+        while(Initialized == null)
         {
             yield return null;
         }
 
-        if(initialized == false)
+        if(Initialized == false)
         {
             enabledJSON.val = false;
             yield break;
@@ -57,7 +57,7 @@ class ScriptBase : MVRScript
         var onUIDisabled = OnUIDisabled();
         if(onUIDisabled != null)
         {
-            pluginUIEventsListener.onDisable.AddListener(() => StartCoroutine(OnUIDisabledCo(onUIDisabled)));
+            PluginUIEventsListener.OnDisableEvent.AddListener(() => StartCoroutine(OnUIDisabledCo(onUIDisabled)));
         }
     }
 
@@ -82,12 +82,12 @@ class ScriptBase : MVRScript
             yield return null;
             yield return null;
 
-            while(initialized == null)
+            while(Initialized == null)
             {
                 yield return null;
             }
 
-            if(initialized == false)
+            if(Initialized == false)
             {
                 yield break;
             }
@@ -121,12 +121,12 @@ class ScriptBase : MVRScript
 
 #region *** Init ***
 
-    public bool? initialized { get; protected set; }
+    public bool? Initialized { get; protected set; }
 
     protected void FailInitWithMessage(string text)
     {
         Loggr.Message(text);
-        initialized = false;
+        Initialized = false;
     }
 
     protected void FailInitWithError(string text)
@@ -134,7 +134,7 @@ class ScriptBase : MVRScript
         Loggr.Error(text);
         SetGrayBackground();
         CreateErrorTextField(text);
-        initialized = false;
+        Initialized = false;
     }
 
     void CreateErrorTextField(string text)
@@ -151,7 +151,7 @@ class ScriptBase : MVRScript
 
     protected void OnDestroy()
     {
-        DestroyImmediate(pluginUIEventsListener);
+        DestroyImmediate(PluginUIEventsListener);
     }
 
 #endregion

@@ -7,13 +7,13 @@ using UnityEngine;
 class Bindings : MonoBehaviour
 {
     ScriptBase _script;
-    public Dictionary<string, string> @namespace { get; private set; }
+    public Dictionary<string, string> Namespace { get; private set; }
     Dictionary<string, JSONStorableAction> _actions;
 
     public void Init(ScriptBase script, string namespaceName)
     {
         _script = script;
-        @namespace = new Dictionary<string, string>
+        Namespace = new Dictionary<string, string>
         {
             { "Namespace", namespaceName },
         };
@@ -40,12 +40,12 @@ class Bindings : MonoBehaviour
     // adapted from Timeline v4.3.1 (c) acidbubbles
     IEnumerator SelectPluginUI(Action postAction = null)
     {
-        while(_script.initialized == null)
+        while(_script.Initialized == null)
         {
             yield return null;
         }
 
-        if(_script.initialized == false)
+        if(_script.Initialized == false)
         {
             yield break;
         }

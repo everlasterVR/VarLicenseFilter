@@ -6,26 +6,26 @@ sealed class UnityEventsListener : MonoBehaviour
 {
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    public bool isEnabled { get; private set; }
-    public readonly UnityEvent onEnable = new UnityEvent();
-    public readonly UnityEvent onDisable = new UnityEvent();
+    public bool IsEnabled { get; private set; }
+    public UnityEvent OnEnableEvent { get; } = new UnityEvent();
+    public UnityEvent OnDisableEvent { get; } = new UnityEvent();
 
     void OnEnable()
     {
-        isEnabled = true;
-        onEnable.Invoke();
+        IsEnabled = true;
+        OnEnableEvent.Invoke();
     }
 
     void OnDisable()
     {
-        isEnabled = false;
-        onDisable.Invoke();
+        IsEnabled = false;
+        OnDisableEvent.Invoke();
     }
 
     void OnDestroy()
     {
-        isEnabled = false;
-        onEnable.RemoveAllListeners();
-        onDisable.RemoveAllListeners();
+        IsEnabled = false;
+        OnEnableEvent.RemoveAllListeners();
+        OnDisableEvent.RemoveAllListeners();
     }
 }

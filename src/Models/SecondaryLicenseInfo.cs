@@ -1,47 +1,47 @@
 public class SecondaryLicenseInfo
 {
-    public License license { get; set; }
+    public License License { get; set; }
 
     string _activeAfterDayString;
     string _activeAfterMonthString;
     string _activeAfterYearString;
 
-    public int activeAfterDay { get; private set; }
-    public int activeAfterMonth { get; private set; }
-    public int activeAfterYear { get; private set; }
+    public int ActiveAfterDay { get; private set; }
+    public int ActiveAfterMonth { get; private set; }
+    public int ActiveAfterYear { get; private set; }
 
-    public string activeAfterDayString
+    public string ActiveAfterDayString
     {
         set
         {
             _activeAfterDayString = value;
             int dayInt;
-            activeAfterDay = int.TryParse(value, out dayInt) ? dayInt : -1;
+            ActiveAfterDay = int.TryParse(value, out dayInt) ? dayInt : -1;
         }
     }
 
-    public string activeAfterMonthString
+    public string ActiveAfterMonthString
     {
         set
         {
             _activeAfterMonthString = value;
-            activeAfterMonth = MonthStringToMonthInt(value);
+            ActiveAfterMonth = MonthStringToMonthInt(value);
         }
     }
 
-    public string activeAfterYearString
+    public string ActiveAfterYearString
     {
         set
         {
             _activeAfterYearString = value;
             int yearInt;
-            activeAfterYear = int.TryParse(value, out yearInt) ? yearInt : -1;
+            ActiveAfterYear = int.TryParse(value, out yearInt) ? yearInt : -1;
         }
     }
 
     public bool ActiveAfterDateIsValidDate()
     {
-        return activeAfterDay != -1 && activeAfterMonth != -1 && activeAfterYear != -1;
+        return ActiveAfterDay != -1 && ActiveAfterMonth != -1 && ActiveAfterYear != -1;
     }
 
     public string GetActiveAfterDateString()
