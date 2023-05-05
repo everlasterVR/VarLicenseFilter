@@ -124,7 +124,7 @@ sealed class VarLicenseFilter : ScriptBase
     {
         if(_lateInitDone)
         {
-            if(!string.IsNullOrEmpty(AddonPackagesLocationJss.val))
+            if(!string.IsNullOrEmpty(AddonPackagesLocationJss.val) && !RequireFixAndRestart)
             {
                 bool syncNeeded = RefreshSessionPluginPackages();
                 if(syncNeeded)
