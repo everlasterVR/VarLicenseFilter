@@ -1,53 +1,49 @@
 public class SecondaryLicenseInfo
 {
-    public License License { get; set; }
+    public License license;
 
     string _activeAfterDayString;
     string _activeAfterMonthString;
     string _activeAfterYearString;
 
-    public int ActiveAfterDay { get; private set; }
-    public int ActiveAfterMonth { get; private set; }
-    public int ActiveAfterYear { get; private set; }
+    public int activeAfterDay { get; private set; }
+    public int activeAfterMonth { get; private set; }
+    public int activeAfterYear { get; private set; }
 
-    public string ActiveAfterDayString
+    public string activeAfterDayString
     {
         set
         {
             _activeAfterDayString = value;
             int dayInt;
-            ActiveAfterDay = int.TryParse(value, out dayInt) ? dayInt : -1;
+            activeAfterDay = int.TryParse(value, out dayInt) ? dayInt : -1;
         }
     }
 
-    public string ActiveAfterMonthString
+    public string activeAfterMonthString
     {
         set
         {
             _activeAfterMonthString = value;
-            ActiveAfterMonth = MonthStringToMonthInt(value);
+            activeAfterMonth = MonthStringToMonthInt(value);
         }
     }
 
-    public string ActiveAfterYearString
+    public string activeAfterYearString
     {
         set
         {
             _activeAfterYearString = value;
             int yearInt;
-            ActiveAfterYear = int.TryParse(value, out yearInt) ? yearInt : -1;
+            activeAfterYear = int.TryParse(value, out yearInt) ? yearInt : -1;
         }
     }
 
-    public bool ActiveAfterDateIsValidDate()
-    {
-        return ActiveAfterDay != -1 && ActiveAfterMonth != -1 && ActiveAfterYear != -1;
-    }
+    public bool ActiveAfterDateIsValidDate() =>
+        activeAfterDay != -1 && activeAfterMonth != -1 && activeAfterYear != -1;
 
-    public string GetActiveAfterDateString()
-    {
-        return $"{_activeAfterDayString} {_activeAfterMonthString} {_activeAfterYearString}";
-    }
+    public string GetActiveAfterDateString() =>
+        $"{_activeAfterDayString} {_activeAfterMonthString} {_activeAfterYearString}";
 
     static int MonthStringToMonthInt(string monthString)
     {

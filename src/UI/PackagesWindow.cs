@@ -27,7 +27,8 @@ sealed class PackagesWindow : WindowBase
         AddElement(() =>
         {
             var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
+            var fieldTransform = script.InstantiateTextField(parent);
+            UnityEngine.Object.Destroy(fieldTransform.GetComponent<LayoutElement>());
             var rectTransform = fieldTransform.GetComponent<RectTransform>();
             rectTransform.pivot = new Vector2(0, 0);
             rectTransform.anchoredPosition = new Vector2(10, -1220);

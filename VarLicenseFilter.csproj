@@ -22,13 +22,12 @@
         <Reference Include="Assembly-CSharp">
             <HintPath>..\..\..\..\VaM_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
-        <Reference Include="System" />
-        <Reference Include="System.Core" />
-        <Reference Include="System.Xml.Linq" />
-        <Reference Include="System.Data.DataSetExtensions" />
-        <Reference Include="Microsoft.CSharp" />
-        <Reference Include="System.Data" />
-        <Reference Include="System.Xml" />
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Xml.Linq"/>
+        <Reference Include="System.Data.DataSetExtensions"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.Xml"/>
         <Reference Include="UnityEngine">
             <HintPath>..\..\..\..\VaM_Data\Managed\UnityEngine.dll</HintPath>
         </Reference>
@@ -77,25 +76,17 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Common\src\**\*.cs"/>
         <Compile Include="src\Bindings.cs" />
-        <Compile Include="src\Common\Components\UnityEventsListener.cs" />
-        <Compile Include="src\Common\Extensions\AtomExtensions.cs" />
-        <Compile Include="src\Common\Extensions\ListExtensions.cs" />
-        <Compile Include="src\Common\Extensions\MVRScriptExtensions.cs" />
-        <Compile Include="src\Common\Extensions\StringExtensions.cs" />
-        <Compile Include="src\Common\Extensions\UIDynamicExtensions.cs" />
-        <Compile Include="src\Common\Extensions\UIDynamicPopupExtensions.cs" />
-        <Compile Include="src\Common\ScriptBase.cs" />
-        <Compile Include="src\Common\Static\Colors.cs" />
-        <Compile Include="src\Common\Static\Constant.cs" />
-        <Compile Include="src\Common\Utils\FileUtils.cs" />
-        <Compile Include="src\Common\Utils\JSONUtils.cs" />
-        <Compile Include="src\Common\Utils\Loggr.cs" />
-        <Compile Include="src\Common\Utils\Utils.cs" />
+        <Compile Include="src\Extensions.cs" />
         <Compile Include="src\Models\DateTimeInts.cs" />
         <Compile Include="src\Models\License.cs" />
         <Compile Include="src\Models\SecondaryLicenseCacheObject.cs" />
         <Compile Include="src\Models\SecondaryLicenseInfo.cs" />
+        <Compile Include="src\Resources.cs" />
+        <Compile Include="src\Utils\FileUtils.cs" />
+        <Compile Include="src\Utils\JSONUtils.cs" />
+        <Compile Include="src\Utils\Utils.cs" />
         <Compile Include="src\VarLicenseFilter.cs" />
         <Compile Include="src\Models\VarPackage.cs" />
         <Compile Include="src\UI\PackagesWindow.cs" />
@@ -110,8 +101,8 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include="CreateAddonPackagesSymlink.bat" />
-        <Content Include="scripts\generate_cslist.sh" />
         <Content Include="scripts\package.sh" />
+        <Content Include="VarLicenseFilter.cslist" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -20,7 +20,7 @@ class Bindings : MonoBehaviour
         _actions = new Dictionary<string, JSONStorableAction>();
         AddActions(new List<JSONStorableAction>
         {
-            script.NewJSONStorableAction(Constant.OPEN_UI, () => StartCoroutine(SelectPluginUI())),
+            script.NewJSONStorableAction("OpenUI", () => StartCoroutine(SelectPluginUI())),
         });
     }
 
@@ -40,12 +40,12 @@ class Bindings : MonoBehaviour
     // adapted from Timeline v4.3.1 (c) acidbubbles
     IEnumerator SelectPluginUI(Action postAction = null)
     {
-        while(_script.Initialized == null)
+        while(_script.initialized == null)
         {
             yield return null;
         }
 
-        if(_script.Initialized == false)
+        if(_script.initialized == false)
         {
             yield break;
         }

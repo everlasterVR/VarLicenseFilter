@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 sealed class SetupWindow : WindowBase
 {
@@ -14,7 +15,8 @@ sealed class SetupWindow : WindowBase
             const string text = "Select AddonPackages directory location";
             var jss = new JSONStorableString(text, text);
             var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
+            var fieldTransform = script.InstantiateTextField(parent);
+            UnityEngine.Object.Destroy(fieldTransform.GetComponent<LayoutElement>());
             var rectTransform = fieldTransform.GetComponent<RectTransform>();
             rectTransform.pivot = new Vector2(0, 0);
             rectTransform.anchoredPosition = new Vector2(10, -100);
@@ -65,7 +67,8 @@ sealed class SetupWindow : WindowBase
             AddElement(path, () =>
             {
                 var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                var buttonTransform = Utils.DestroyLayout(script.InstantiateButton(parent));
+                var buttonTransform = script.InstantiateButton(parent);
+                UnityEngine.Object.Destroy(buttonTransform.GetComponent<LayoutElement>());
                 var rectTransform = buttonTransform.GetComponent<RectTransform>();
                 rectTransform.pivot = new Vector2(0, 0);
                 rectTransform.anchoredPosition = new Vector2(10, -100 - 65 * n);
@@ -87,7 +90,8 @@ sealed class SetupWindow : WindowBase
         AddElement(action.name, () =>
         {
             var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var buttonTransform = Utils.DestroyLayout(script.InstantiateButton(parent));
+            var buttonTransform = script.InstantiateButton(parent);
+            UnityEngine.Object.Destroy(buttonTransform.GetComponent<LayoutElement>());
             var rectTransform = buttonTransform.GetComponent<RectTransform>();
             rectTransform.pivot = new Vector2(0, 0);
             rectTransform.anchoredPosition = new Vector2(275, -100 - (paths.Count + 2) * 65);

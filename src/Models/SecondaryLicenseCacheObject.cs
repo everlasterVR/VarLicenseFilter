@@ -1,12 +1,10 @@
 struct SecondaryLicenseCacheObject
 {
-    public string LicenseType { get; set; }
-    public string ActiveAfterDay { get; set; }
-    public string ActiveAfterMonth { get; set; }
-    public string ActiveAfterYear { get; set; }
+    public string licenseType { get; set; }
+    public string activeAfterDay { get; set; }
+    public string activeAfterMonth { get; set; }
+    public string activeAfterYear { get; set; }
 
-    public override string ToString()
-    {
-        return $"{LicenseType} active after {ActiveAfterDay} {ActiveAfterMonth} {ActiveAfterYear}";
-    }
+    public override string ToString() =>
+        $"{licenseType} active after {activeAfterDay} {activeAfterMonth} {activeAfterYear}";
 }

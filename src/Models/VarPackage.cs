@@ -1,19 +1,20 @@
-﻿sealed class VarPackage
+﻿using everlaster;
+
+sealed class VarPackage
 {
-    public string Path { get; }
-    public string Filename { get; }
+    public readonly string path;
+    public readonly string filename;
     License _activeLicense;
     readonly License _license;
     SecondaryLicenseInfo _secondaryLicenseInfo;
-    public string DisplayString { get; }
+    public readonly string displayString;
 
     readonly bool _initialEnabled;
-    public bool Enabled { get; private set; }
-    public bool Changed { get; private set; }
-    public bool ForceEnabled { get; set; }
-    public bool ForceDisabled { get; set; }
-    public bool IsDefaultSessionPluginPackage { get; set; }
-
+    public bool enabled { get; private set; }
+    public bool changed { get; private set; }
+    public bool forceEnabled;
+    public bool forceDisabled;
+    public bool isDefaultSessionPluginPackage;
     public VarPackage(
         string path,
         string filename,
@@ -24,16 +25,16 @@
         bool forceDisabled
     )
     {
-        Path = path;
-        Filename = filename;
+        this.path = path;
+        this.filename = filename;
         _license = license;
         _activeLicense = license;
-        DisplayString = $"{filename}\u00A0[{license.displayName}]";
+        displayString = $"{filename}\u00A0[{license.displayName}]";
         _initialEnabled = enabled;
-        Enabled = _initialEnabled;
-        IsDefaultSessionPluginPackage = isDefaultSessionPluginPackage;
-        ForceEnabled = forceEnabled;
-        ForceDisabled = forceDisabled;
+        this.enabled = _initialEnabled;
+        this.isDefaultSessionPluginPackage = isDefaultSessionPluginPackage;
+        this.forceEnabled = forceEnabled;
+        this.forceDisabled = forceDisabled;
     }
 
     public void SetSecondaryLicenseInfo(SecondaryLicenseInfo secondaryLicenseInfo, DateTimeInts today)
@@ -44,20 +45,20 @@
 
     public void SyncEnabled(bool applyLicenseFilter)
     {
-        if(ForceEnabled)
+        if(forceEnabled)
         {
-            Enabled = true;
+            enabled = true;
         }
-        else if(ForceDisabled)
+        else if(forceDisabled)
         {
-            Enabled = false;
+            enabled = false;
         }
         else
         {
-            Enabled = applyLicenseFilter ? _activeLicense.enabledJsb.val : _initialEnabled;
+            enabled = applyLicenseFilter ? _activeLicense.enabledJsb.val : _initialEnabled;
         }
 
-        Changed = Enabled != _initialEnabled;
+        changed = enabled != _initialEnabled;
     }
 
     /* See MVR.FileManagement.PackageBuilder.SyncDependencyLicenseReport */
@@ -68,27 +69,27 @@
             return _license;
         }
 
-        int activeAfterDay = _secondaryLicenseInfo.ActiveAfterDay;
-        int activeAfterMonth = _secondaryLicenseInfo.ActiveAfterMonth;
-        int activeAfterYear = _secondaryLicenseInfo.ActiveAfterYear;
+        int activeAfterDay = _secondaryLicenseInfo.activeAfterDay;
+        int activeAfterMonth = _secondaryLicenseInfo.activeAfterMonth;
+        int activeAfterYear = _secondaryLicenseInfo.activeAfterYear;
 
         if(_secondaryLicenseInfo.ActiveAfterDateIsValidDate())
         {
-            if(today.Year > _secondaryLicenseInfo.ActiveAfterYear)
+            if(today.year > _secondaryLicenseInfo.activeAfterYear)
             {
-                return _secondaryLicenseInfo.License;
+                return _secondaryLicenseInfo.license;
             }
 
-            if(today.Year == activeAfterYear)
+            if(today.year == activeAfterYear)
             {
-                if(today.Month > activeAfterMonth)
+                if(today.month > activeAfterMonth)
                 {
-                    return _secondaryLicenseInfo.License;
+                    return _secondaryLicenseInfo.license;
                 }
 
-                if(today.Month == activeAfterMonth && today.Day > activeAfterDay)
+                if(today.month == activeAfterMonth && today.day > activeAfterDay)
                 {
-                    return _secondaryLicenseInfo.License;
+                    return _secondaryLicenseInfo.license;
                 }
             }
         }
@@ -98,32 +99,32 @@
 
     public void Disable()
     {
-        Enabled = false;
-        Changed = Enabled != _initialEnabled;
+        enabled = false;
+        changed = enabled != _initialEnabled;
     }
 
     public string GetLongDisplayString()
     {
         if(_secondaryLicenseInfo == null || _license != License.PC_EA)
         {
-            return $"{Filename}\u00A0[{_license.displayName.Bold()}]";
+            return $"{filename}\u00A0[{_license.displayName.Bold()}]";
         }
 
         if(_activeLicense == _license)
         {
             string primaryLicense = _license.displayName.Bold();
-            string secondaryLicense = $"{_secondaryLicenseInfo.License.displayName} after {_secondaryLicenseInfo.GetActiveAfterDateString()}";
-            return $"{Filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
+            string secondaryLicense = $"{_secondaryLicenseInfo.license.displayName} after {_secondaryLicenseInfo.GetActiveAfterDateString()}";
+            return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
 
-        if(_activeLicense == _secondaryLicenseInfo.License)
+        if(_activeLicense == _secondaryLicenseInfo.license)
         {
             string primaryLicense = _license.displayName;
-            string secondaryLicense = _secondaryLicenseInfo.License.displayName.Bold();
-            return $"{Filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
+            string secondaryLicense = _secondaryLicenseInfo.license.displayName.Bold();
+            return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
 
-        Loggr.Error($"Unexpected active license '{_activeLicense?.name}' on package {Filename}.");
-        return DisplayString;
+        new LogBuilder(filename).Error($"Unexpected active license '{_activeLicense?.name}' on package.");
+        return displayString;
     }
 }

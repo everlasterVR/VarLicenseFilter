@@ -1,3 +1,4 @@
+using everlaster;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -5,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
+// TODO update
 class WindowBase : IWindow
 {
     readonly Dictionary<string, UIDynamic> _elements;
@@ -223,12 +225,13 @@ class WindowBase : IWindow
     protected UIDynamicTextField CreateVersionTextField(JSONStorableString jss)
     {
         var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-        var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
+        var fieldTransform = script.InstantiateTextField(parent);
+        UnityEngine.Object.Destroy(fieldTransform.GetComponent<LayoutElement>());
         var rectTransform = fieldTransform.GetComponent<RectTransform>();
         rectTransform.pivot = new Vector2(0, 0);
-        rectTransform.anchoredPosition = new Vector2(530, -Constant.UI_MAX_HEIGHT - 27);
+        rectTransform.anchoredPosition = new Vector2(530, -1227);
         rectTransform.sizeDelta = new Vector2(-556, 42);
-        jss.val = $"v{VarLicenseFilter.VERSION}";
+        jss.val = $"v{Script.VERSION}";
         var textField = fieldTransform.GetComponent<UIDynamicTextField>();
         textField.text = jss.val;
         textField.backgroundColor = Color.clear;
