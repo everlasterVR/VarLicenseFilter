@@ -5,4 +5,4 @@ bin/
 obj/
 publish/
 *.fav
-*.cslist
+Folder.DotSettings.user

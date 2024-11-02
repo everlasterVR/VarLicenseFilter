@@ -107,7 +107,6 @@
     <ItemGroup>
         <None Include=".gitignore" />
         <None Include="meta.json" />
-        <None Include="README.md" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="CreateAddonPackagesSymlink.bat" />
