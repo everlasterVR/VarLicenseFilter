@@ -1,129 +1,68 @@
-﻿using System.Collections.Generic;
+﻿using everlaster.FlatUI;
 using UnityEngine;
-using UnityEngine.UI;
 
-sealed class SetupWindow : WindowBase
+namespace everlaster
 {
-    public SetupWindow() : base(VarLicenseFilter.Script, nameof(SetupWindow))
+    sealed class SetupWindow : CustomWindow
     {
-    }
+        readonly VarLicenseFilter _script;
 
-    protected override void OnBuild()
-    {
-        AddElement(() =>
+        public SetupWindow(VarLicenseFilter script) : base(script.uiHandler, nameof(SetupWindow))
         {
-            const string text = "Select AddonPackages directory location";
-            var jss = new JSONStorableString(text, text);
-            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var fieldTransform = script.InstantiateTextField(parent);
-            UnityEngine.Object.Destroy(fieldTransform.GetComponent<LayoutElement>());
-            var rectTransform = fieldTransform.GetComponent<RectTransform>();
-            rectTransform.pivot = new Vector2(0, 0);
-            rectTransform.anchoredPosition = new Vector2(10, -100);
-            rectTransform.sizeDelta = new Vector2(-20, 50);
-            var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-            textField.text = jss.val;
-            textField.UItext.alignment = TextAnchor.LowerCenter;
-            textField.UItext.fontSize = 32;
-            textField.height = 60;
-            textField.backgroundColor = Color.clear;
-            VarLicenseFilter.Script.AddTextFieldToJss(textField, jss);
-            return textField;
-        });
-
-        var paths = VarLicenseFilter.Script.AddonPackagesDirPaths;
-        if(paths.Count > 0)
-        {
-            BuildSection(paths);
-        }
-        else
-        {
-            AddSpacer(100, false);
-            AddInfoTextField(
-                "No suitable locations found. Please setup the symlink first.",
-                false,
-                100,
-                28
-            );
+            _script = script;
         }
 
-        /* Version text field */
-        {
-            var versionJss = new JSONStorableString("version", "");
-            var versionTextField = CreateVersionTextField(versionJss);
-            AddElement(versionTextField);
-            VarLicenseFilter.Script.AddTextFieldToJss(versionTextField, versionJss);
-        }
+        const string SAVE_AND_CONTINUE = "Save selected location and continue";
 
-        Refresh();
-    }
-
-    void BuildSection(List<string> paths)
-    {
-        for(int i = 0; i < paths.Count; i++)
+        protected override void Build()
         {
-            string path = paths[i];
-            int n = i + 1;
-            AddElement(path, () =>
+            AddTextField("Select AddonPackages directory location", new Vector2(10, -90), new Vector2(-20, 50))
+                .SetFontSize(30)
+                .SetAlignment(TextAnchor.MiddleCenter)
+                .SetBackgroundColor(Color.clear)
+                .DisableScroll();
+
+            var paths = _script.addonPackagesDirPaths;
+            if(paths.Count > 0)
             {
-                var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-                var buttonTransform = script.InstantiateButton(parent);
-                UnityEngine.Object.Destroy(buttonTransform.GetComponent<LayoutElement>());
-                var rectTransform = buttonTransform.GetComponent<RectTransform>();
-                rectTransform.pivot = new Vector2(0, 0);
-                rectTransform.anchoredPosition = new Vector2(10, -100 - 65 * n);
-                rectTransform.sizeDelta = new Vector2(-20, 50);
-                var button = buttonTransform.GetComponent<UIDynamicButton>();
-                button.SetFocusedColor(Colors.lightGray);
-                button.buttonText.alignment = TextAnchor.MiddleLeft;
-                button.height = 60;
-                button.button.onClick.AddListener(() =>
+                for(int i = 0; i < paths.Count; i++)
                 {
-                    VarLicenseFilter.Script.AddonPackagesLocationJss.val = path;
-                    Refresh();
-                });
-                return button;
-            });
-        }
+                    int n = i + 1;
+                    string path = paths[i];
+                    AddButton(path, new Vector2(10, -100 - 65 * n), new Vector2(-20, 60))
+                        .SetAlignment(TextAnchor.MiddleLeft)
+                        .OffsetTextRectX(10)
+                        .AddListener(() =>
+                        {
+                            _script.addonPackagesLocationString.val = path;
+                            Refresh();
+                        });
+                }
 
-        var action = VarLicenseFilter.Script.SaveAndContinueAction;
-        AddElement(action.name, () =>
-        {
-            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var buttonTransform = script.InstantiateButton(parent);
-            UnityEngine.Object.Destroy(buttonTransform.GetComponent<LayoutElement>());
-            var rectTransform = buttonTransform.GetComponent<RectTransform>();
-            rectTransform.pivot = new Vector2(0, 0);
-            rectTransform.anchoredPosition = new Vector2(275, -100 - (paths.Count + 2) * 65);
-            rectTransform.sizeDelta = new Vector2(-550, 50);
-            var button = buttonTransform.GetComponent<UIDynamicButton>();
-            button.SetFocusedColor(Colors.lightGray);
-            button.label = action.name;
-            button.SetActiveStyle(false, true);
-            action.RegisterButton(button);
-            button.height = 60;
-            return button;
-        });
-    }
-
-    void Refresh()
-    {
-        foreach(string path in VarLicenseFilter.Script.AddonPackagesDirPaths)
-        {
-            var button = GetElementAs<UIDynamicButton>(path);
-            if(button)
-            {
-                button.label = path == VarLicenseFilter.Script.AddonPackagesLocationJss.val
-                    ? "  > ".Bold() + path
-                    : "  " + path;
+                AddButton(SAVE_AND_CONTINUE, new Vector2(275, -100 - (paths.Count + 2) * 65), new Vector2(-550, 60))
+                    .AddListener(_script.SaveAndContinue)
+                    .SetActiveStyle(false, true);
             }
+            else
+            {
+                AddInfo(
+                    "No suitable locations found. Please setup the symlink first.",
+                    new Vector2(10, -165),
+                    new Vector2(-20, 50)
+                );
+            }
+
+            AddVersionInfo();
         }
 
-        var saveButton = GetElement(VarLicenseFilter.Script.SaveAndContinueAction.name);
-        if(saveButton)
+        protected override void OnRefresh()
         {
-            bool optionIsSelected = !string.IsNullOrEmpty(VarLicenseFilter.Script.AddonPackagesLocationJss.val);
-            saveButton.SetActiveStyle(optionIsSelected, true);
+            foreach(string path in _script.addonPackagesDirPaths)
+            {
+                GetButtonElement(path)?.SetText(path == _script.addonPackagesLocationString.val ? $"<b>></b> {path}" : path);
+            }
+
+            GetButtonElement(SAVE_AND_CONTINUE)?.SetActiveStyle(!string.IsNullOrEmpty(_script.addonPackagesLocationString.val), true);
         }
     }
 }

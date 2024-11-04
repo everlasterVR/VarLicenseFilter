@@ -84,16 +84,13 @@
         <Compile Include="src\Models\SecondaryLicenseCacheObject.cs" />
         <Compile Include="src\Models\SecondaryLicenseInfo.cs" />
         <Compile Include="src\Resources.cs" />
+        <Compile Include="src\UI\MainWindow.cs" />
+        <Compile Include="src\UI\PackagesWindow.cs" />
+        <Compile Include="src\UI\SetupWindow.cs" />
+        <Compile Include="src\UI\UIHandler.cs" />
         <Compile Include="src\Utils\FileUtils.cs" />
-        <Compile Include="src\Utils\JSONUtils.cs" />
-        <Compile Include="src\Utils\Utils.cs" />
         <Compile Include="src\VarLicenseFilter.cs" />
         <Compile Include="src\Models\VarPackage.cs" />
-        <Compile Include="src\UI\PackagesWindow.cs" />
-        <Compile Include="src\UI\IWindow.cs" />
-        <Compile Include="src\UI\MainWindow.cs" />
-        <Compile Include="src\UI\SetupWindow.cs" />
-        <Compile Include="src\UI\WindowBase.cs" />
     </ItemGroup>
     <ItemGroup>
         <None Include=".gitignore" />

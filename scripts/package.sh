@@ -23,18 +23,21 @@ prepare_directories() {
 package_files() {
   file="$plugin_name.cslist"
   cp "$file" "$resource_dir/"
+  file="$resource_dir/$(basename "$file")"
+  sed -i '/DevUtils.cs\|DevUISection.cs/d' "$file"
   while IFS= read -r line; do
     line=$(echo "$line" | sed 's/\r$//')
     line="${line//\\//}"
     filename=$(basename "$line")
     from_dir=$(dirname "$line")
-    to_dir=$(dirname "$line" | sed 's#Common/src#src/Common#')
+    to_dir=$(dirname "$line" | sed 's#Common/src#src/Common#' | sed 's#FlatUI/src#src/FlatUI#')
     mkdir -p "$resource_dir/$to_dir"
     cp "$from_dir/$filename" "$resource_dir/$to_dir/"
   done < "$file"
 
-  # Update the .cslist file to reference the updated Common file paths
-  sed -i 's#\Common\\src#src\\Common#g' "$resource_dir/$(basename "$file")"
+  # Update the .cslist file to reference the updated Common & FlatUI file paths
+  sed -i 's#\Common\\src#src\\Common#g' "$file"
+  sed -i 's#\FlatUI\\src#src\\FlatUI#g' "$file"
 }
 
 update_version_info() {

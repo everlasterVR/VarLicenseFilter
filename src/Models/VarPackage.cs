@@ -107,12 +107,12 @@ sealed class VarPackage
     {
         if(_secondaryLicenseInfo == null || _license != License.PC_EA)
         {
-            return $"{filename}\u00A0[{_license.displayName.Bold()}]";
+            return $"{filename}\u00A0[<b>{_license.displayName}</b>]";
         }
 
         if(_activeLicense == _license)
         {
-            string primaryLicense = _license.displayName.Bold();
+            string primaryLicense = $"<b>{_license.displayName}</b>";
             string secondaryLicense = $"{_secondaryLicenseInfo.license.displayName} after {_secondaryLicenseInfo.GetActiveAfterDateString()}";
             return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
@@ -120,7 +120,7 @@ sealed class VarPackage
         if(_activeLicense == _secondaryLicenseInfo.license)
         {
             string primaryLicense = _license.displayName;
-            string secondaryLicense = _secondaryLicenseInfo.license.displayName.Bold();
+            string secondaryLicense = $"<b>{_secondaryLicenseInfo.license.displayName}</b>";
             return $"{filename}\u00A0[{primaryLicense}]\u00A0[{secondaryLicense}]";
         }
 

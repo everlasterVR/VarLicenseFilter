@@ -1,237 +1,114 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using everlaster.FlatUI;
+using everlaster.FlatUI.Elements;
+using System.Diagnostics.CodeAnalysis;
+using UnityEngine;
 
-sealed class MainWindow : WindowBase
+namespace everlaster
 {
-    public MainWindow() : base(VarLicenseFilter.Script, nameof(MainWindow))
+    sealed class MainWindow : CustomWindow
     {
-        nestedWindows.Add(new PackagesWindow(OnReturn));
-    }
+        readonly VarLicenseFilter _script;
 
-    protected override void OnBuild()
-    {
-        BuildLeftSide();
-        AddElement(() =>
+        public MainWindow(VarLicenseFilter script) : base(script.uiHandler, script.className)
         {
-            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var fieldTransform = Utils.DestroyLayout(script.InstantiateTextField(parent));
-            var rectTransform = fieldTransform.GetComponent<RectTransform>();
-            rectTransform.pivot = new Vector2(0, 0);
-            rectTransform.anchoredPosition = new Vector2(10, -1220);
-            rectTransform.sizeDelta = new Vector2(-15, 685);
-            var textField = fieldTransform.GetComponent<UIDynamicTextField>();
-            textField.text = VarLicenseFilter.Script.FilterInfoJss.val;
-            VarLicenseFilter.Script.AddTextFieldToJss(textField, VarLicenseFilter.Script.FilterInfoJss);
-            textField.UItext.fontSize = 26;
-            textField.backgroundColor = Color.white;
-            textField.UItext.horizontalOverflow = HorizontalWrapMode.Overflow;
-            var scrollView = textField.transform.Find("Scroll View");
-            var scrollRect = scrollView.GetComponent<ScrollRect>();
-            scrollRect.horizontal = true;
-            scrollRect.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
-            return textField;
-        });
-        BuildRightSide();
-        RefreshRestartButton();
-    }
-
-    void BuildLeftSide(bool rightSide = false)
-    {
-        var list = VarLicenseFilter.Script.licenses.Values.ToList();
-        int leftCount = 0;
-        int rightCount = 0;
-        for(int i = 0; i < list.Count; i++)
-        {
-            var license = list[i];
-            if(i < list.Count / 2)
-            {
-                AddLicenseToggle(license, 0, -65 * leftCount);
-                leftCount++;
-            }
-            else
-            {
-                AddLicenseToggle(license, 270, -65 * rightCount);
-                rightCount++;
-            }
+            _script = script;
+            AddNestedWindow(new PackagesWindow(script));
         }
 
-        AddSpacer(330, rightSide);
-
-        AddElement(() =>
+        protected override void Build()
         {
-            var action = VarLicenseFilter.Script.UndoRunFiltersAction;
-            var button = script.CreateButton(action.name, rightSide);
-            action.RegisterButton(button);
-            button.SetFocusedColor(Colors.lightGray);
-            button.SetActiveStyle(!VarLicenseFilter.Script.RequireFixAndRestart, true);
-            return button;
-        });
+            /* Left side */
 
-        AddElement(() =>
-        {
-            var action = VarLicenseFilter.Script.ApplyFilterAction;
-            var button = script.CreateButton(action.name, rightSide);
-            action.RegisterButton(button);
-            button.height = 100;
-            button.SetFocusedColor(Colors.lightGray);
-            button.SetActiveStyle(!VarLicenseFilter.Script.RequireFixAndRestart, true);
-            return button;
-        });
-    }
-
-    /*
-     * Use cases
-     * =========
-     *
-     * 1. Creating a resource to be released for free on the Hub
-     *      - Allows free distribution
-     * 2. Creating a paid resource
-     *      - Allows commercial use
-     *      - OR Allows commercial use and free distribution
-     */
-
-    void BuildRightSide(bool rightSide = true)
-    {
-        AddElement(() =>
-        {
-            var textField = CreateHeaderTextField("\n".Size(12) + "Auto-selection".Bold(), 28, 50, rightSide);
-            textField.UItext.alignment = TextAnchor.MiddleLeft;
-            return textField;
-        });
-
-        AddElement(() =>
-        {
-            var button = script.CreateButton("  Select all", rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.buttonText.alignment = TextAnchor.MiddleLeft;
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => true));
-            return button;
-        });
-
-        AddElement(() =>
-        {
-            var button = script.CreateButton("  Freely distributable (CC)", rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.buttonText.alignment = TextAnchor.MiddleLeft;
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.isCC));
-            return button;
-        });
-
-        AddElement(() =>
-        {
-            var button = script.CreateButton("  Allows commercial use (CC)", rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.buttonText.alignment = TextAnchor.MiddleLeft;
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.isCC && license.allowsCommercialUse));
-            return button;
-        });
-
-        AddElement(() =>
-        {
-            var button = script.CreateButton("  Allows commercial use (CC) + PC", rightSide);
-            button.SetFocusedColor(Colors.lightGray);
-            button.buttonText.alignment = TextAnchor.MiddleLeft;
-            button.button.onClick.AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse));
-            return button;
-        });
-
-        AddSpacer(5, rightSide);
-
-        AddElement(() =>
-        {
-            var button = script.CreateButton("Manage individual packages", rightSide);
-            if(VarLicenseFilter.Script.RequireFixAndRestart)
             {
-                button.SetActiveStyle(false, true);
-            }
-            else
-            {
-                var nestedWindow = nestedWindows.Find(window => window.GetId() == nameof(PackagesWindow));
-                button.AddListener(() =>
+                var list = _script.licenses.Values.ToList();
+                int leftCount = 0;
+                int rightCount = 0;
+                for(int i = 0; i < list.Count; i++)
                 {
-                    ClearSelf();
-                    activeNestedWindow = nestedWindow;
-                    activeNestedWindow.Rebuild();
-                });
+                    var license = list[i];
+                    if(i < list.Count / 2)
+                    {
+                        AddToggle(license.name, new Vector2(10, -80 - 60 * leftCount), new Vector2(-820, 50));
+                        leftCount++;
+                    }
+                    else
+                    {
+                        AddToggle(license.name, new Vector2(270, -80 - 60 * rightCount), new Vector2(-820, 50));
+                        rightCount++;
+                    }
+                }
+
+                AddButton(_script.undoRunFiltersAction, new Vector2(10, -80 - 60 * leftCount - 10), new Vector2(-555, 50))
+                    .SetActiveStyle(!_script.requireFixAndRestart, true);
+                leftCount++;
+                AddButton(_script.applyFilterAction, new Vector2(10, -80 - 60 * leftCount - 60), new Vector2(-555, 100))
+                    .SetActiveStyle(_script.requireFixAndRestart, true);
             }
 
-            return button;
-        });
+            /* Right side */
 
-        if(VarLicenseFilter.Script.RequireFixAndRestart)
-        {
-            var action = VarLicenseFilter.Script.FixAndRestartAction;
-            AddElement(action.name, () =>
+            AddHeader("Auto-selection", 545, -85);
+            AddButton("Select all", new Vector2(545, -140))
+                .SetAlignment(TextAnchor.MiddleLeft)
+                .OffsetTextRectX(10)
+                .AddListener(() => SelectLicenseTypes(license => true));
+            AddButton("Freely distributable (CC)", new Vector2(545, -200))
+                .SetAlignment(TextAnchor.MiddleLeft)
+                .OffsetTextRectX(10)
+                .AddListener(() => SelectLicenseTypes(license => license.isCC));
+            AddButton("Allows commercial use (CC)", new Vector2(545, -260))
+                .SetAlignment(TextAnchor.MiddleLeft)
+                .OffsetTextRectX(10)
+                .AddListener(() => SelectLicenseTypes(license => license.isCC && license.allowsCommercialUse));
+            AddButton("Allows commercial use (CC) + PC", new Vector2(545, -320))
+                .SetAlignment(TextAnchor.MiddleLeft)
+                .OffsetTextRectX(10)
+                .AddListener(() => SelectLicenseTypes(license => license.allowsCommercialUse));
+
+            var manageButton = AddButton("Manage individual packages", new Vector2(545, -390));
+            if(_script.requireFixAndRestart)
             {
-                var button = script.CreateButton(action.name, rightSide);
-                action.RegisterButton(button);
-                button.height = 100;
-                button.SetFocusedColor(Colors.lightGray);
-                return button;
-            });
-        }
-        else
-        {
-            var action = VarLicenseFilter.Script.RestartVamAction;
-            AddElement(action.name, () =>
+                manageButton.SetActiveStyle(false, true);
+                AddButton(_script.fixAndRestartAction, new Vector2(545, -500), new Vector2(-555, 100));
+            }
+            else
             {
-                var button = script.CreateButton(action.name, rightSide);
-                action.RegisterButton(button);
-                button.height = 100;
-                button.SetFocusedColor(Colors.lightGray);
-                button.SetActiveStyle(false, true);
-                return button;
-            });
+                manageButton.AddListener(() => OpenNestedWindow(nameof(PackagesWindow)));
+                AddButton(_script.restartVamAction, new Vector2(545, -500), new Vector2(-555, 100))
+                    .SetActiveStyle(false, true);
+            }
+
+            /* Lower */
+
+            AddTextField(_script.filterInfoString, new Vector2(10, -1230), new Vector2(-15, 715))
+                .SetFontSize(26)
+                .SetBackgroundColor(Color.white)
+                .OffsetTextRectY(-5)
+                .SetHorizontalOverflowScroll(false);
+
+            AddVersionInfo();
         }
 
-        AddVersionTextField();
-    }
-
-    void AddVersionTextField()
-    {
-        var versionJss = new JSONStorableString("version", "");
-        var versionTextField = CreateVersionTextField(versionJss);
-        AddElement(versionTextField);
-        VarLicenseFilter.Script.AddTextFieldToJss(versionTextField, versionJss);
-    }
-
-    void AddLicenseToggle(License license, float posX, float posY)
-    {
-        AddElement(() =>
+        protected override void OnRefresh()
         {
-            var parent = script.UITransform.Find("Scroll View/Viewport/Content");
-            var toggleTransform = Utils.DestroyLayout(script.InstantiateToggle(parent));
-            var rectTransform = toggleTransform.GetComponent<RectTransform>();
-            rectTransform.pivot = new Vector2(0, 0);
-            rectTransform.anchoredPosition = new Vector2(10 + posX, -60 + posY);
-            rectTransform.sizeDelta = new Vector2(-820, 50);
-            var toggle = toggleTransform.GetComponent<UIDynamicToggle>();
-            toggle.label = license.name;
-            toggle.SetFocusedColor(Colors.lightGray);
-            VarLicenseFilter.Script.AddToggleToJsb(toggle, license.enabledJsb);
-            return toggle;
-        });
-    }
-
-    public void RefreshRestartButton()
-    {
-        var button = GetElementAs<UIDynamicButton>(VarLicenseFilter.Script.RestartVamAction.name);
-        if(button)
-        {
-            bool active = VarLicenseFilter.Script.RequireRestart;
-            button.SetActiveStyle(active, true);
-            button.buttonColor = active ? Colors.buttonRed : Colors.buttonGray;
+            var button = GetButtonElement(_script.restartVamAction);
+            if(button != null)
+            {
+                bool active = _script.requireRestart;
+                button.SetActiveStyle(active, true);
+                button.SetButtonColor(active ? Colors.buttonRed : Colors.buttonGray);
+            }
         }
-    }
 
-    delegate bool LicenseFilter(License license);
+        delegate bool LicenseFilter(License license);
 
-    static void SelectLicenseTypes(LicenseFilter filter)
-    {
-        foreach(var kvp in VarLicenseFilter.Script.licenses)
+        void SelectLicenseTypes(LicenseFilter filter)
         {
-            var license = kvp.Value;
-            license.enabledJsb.val = filter(license);
+            foreach(var pair in _script.licenses)
+            {
+                var license = pair.Value;
+                license.enabledJsb.val = filter(license);
+            }
         }
     }
 }
