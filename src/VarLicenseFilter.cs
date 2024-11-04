@@ -50,22 +50,14 @@ sealed class VarLicenseFilter : Script
     bool _applyLicenseFilter;
     public UIHandler uiHandler { get; private set; }
 
-    public override void Init()
+    protected override void OnInit()
     {
-        try
+        if(!IsValidAtomType(AtomType.SESSION_PLUGIN_MANAGER))
         {
-            base.Init();
-            if(!IsValidAtomType(AtomType.SESSION_PLUGIN_MANAGER))
-            {
-                return;
-            }
+            return;
+        }
 
-            initialized = true;
-        }
-        catch(Exception e)
-        {
-            logBuilder.Exception(e);
-        }
+        initialized = true;
     }
 
     // Use first time UI enable to initialize
