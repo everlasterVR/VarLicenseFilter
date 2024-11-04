@@ -77,6 +77,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Common\src\**\*.cs"/>
+        <Compile Include="FlatUI\src\**\*.cs"/>
         <Compile Include="src\Extensions.cs" />
         <Compile Include="src\Models\DateTimeInts.cs" />
         <Compile Include="src\Models\License.cs" />
