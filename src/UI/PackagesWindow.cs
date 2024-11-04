@@ -1,4 +1,4 @@
-﻿using everlaster.FlatUI;
+using everlaster.FlatUI;
 using UnityEngine;
 
 namespace everlaster

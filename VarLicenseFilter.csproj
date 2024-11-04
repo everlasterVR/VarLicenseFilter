@@ -93,12 +93,11 @@
         <Compile Include="src\Models\VarPackage.cs" />
     </ItemGroup>
     <ItemGroup>
-        <None Include=".gitignore" />
-        <None Include="meta.json" />
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include="CreateAddonPackagesSymlink.bat" />
+        <Content Include="Common\scripts\*.sh"/>
         <Content Include="scripts\package.sh" />
+        <Content Include=".gitignore" />
+        <Content Include="CreateAddonPackagesSymlink.bat" />
+        <Content Include="meta.json" />
         <Content Include="VarLicenseFilter.cslist" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

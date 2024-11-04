@@ -1,4 +1,4 @@
-﻿#define ENV_DEVELOPMENT
+#define ENV_DEVELOPMENT
 using everlaster.FlatUI;
 using System;
 

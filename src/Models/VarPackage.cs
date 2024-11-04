@@ -1,4 +1,4 @@
-﻿using everlaster;
+using everlaster;
 
 sealed class VarPackage
 {
