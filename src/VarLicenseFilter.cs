@@ -12,6 +12,7 @@ sealed class VarLicenseFilter : Script
 {
     public override bool ShouldIgnore() => false;
     protected override string className => nameof(VarLicenseFilter);
+    protected override bool preventDisable => true;
 
     Dictionary<string, string> _packageLicenseCache;
     Dictionary<string, SecondaryLicenseCacheObject> _packageSecondaryLicenseCache;
@@ -66,8 +67,6 @@ sealed class VarLicenseFilter : Script
                 return;
             }
 
-            InitBindings(); // Might already be setup in OnBindingsListRequested.
-            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
             initialized = true;
         }
         catch(Exception e)
@@ -298,25 +297,6 @@ sealed class VarLicenseFilter : Script
         jc[addonPackagesLocationJss.name] = addonPackagesLocationJss.val;
         jc[alwaysEnableDefaultSessionPluginsJsb.name].AsBool = alwaysEnableDefaultSessionPluginsJsb.val;
         FileUtils.WritePrefsJSON(jc);
-    }
-
-    // https://github.com/vam-community/vam-plugins-interop-specs/blob/main/keybindings.md
-    public void OnBindingsListRequested(List<object> bindingsList)
-    {
-        InitBindings(); // Might already be setup in Init.
-        bindingsList.Add(bindings.Namespace);
-        bindingsList.AddRange(bindings.GetActionsList());
-    }
-
-    void InitBindings()
-    {
-        if(bindings)
-        {
-            return;
-        }
-
-        bindings = gameObject.AddComponent<Bindings>();
-        bindings.Init(this, nameof(VarLicenseFilter));
     }
 
     List<string> _preDisabledInfoList;
@@ -1019,11 +999,5 @@ sealed class VarLicenseFilter : Script
     {
         jssc.popup = uiDynamicPopup.popup;
         popupToJSONStorableStringChooser.Add(uiDynamicPopup, jssc);
-    }
-
-    protected override void DoDestroy()
-    {
-        Destroy(bindings);
-        SuperController.singleton.BroadcastMessage("OnActionsProviderDestroyed", this, SendMessageOptions.DontRequireReceiver);
     }
 }
