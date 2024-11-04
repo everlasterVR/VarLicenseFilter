@@ -94,7 +94,6 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include="Common\scripts\*.sh"/>
-        <Content Include="scripts\package.sh" />
         <Content Include=".gitignore" />
         <Content Include="CreateAddonPackagesSymlink.bat" />
         <Content Include="meta.json" />
