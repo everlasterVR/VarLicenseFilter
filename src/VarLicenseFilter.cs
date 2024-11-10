@@ -80,20 +80,20 @@ sealed class VarLicenseFilter : Script
             InitPackages();
             uiHandler.GoToMainWindow();
         }
-    }
 
-    protected override void OnUIEnabled()
-    {
-        if(!string.IsNullOrEmpty(addonPackagesLocationString.val) && !requireFixAndRestart)
+        RegisterOnUIEnabled(() =>
         {
-            bool syncNeeded = RefreshSessionPluginPackages();
-            if(syncNeeded)
+            if(!string.IsNullOrEmpty(addonPackagesLocationString.val) && !requireFixAndRestart)
             {
-                UpdateAlwaysEnabledListInfoText();
-                UpdateAlwaysDisabledListInfoText();
-                SyncPackageStatuses();
+                bool syncNeeded = RefreshSessionPluginPackages();
+                if(syncNeeded)
+                {
+                    UpdateAlwaysEnabledListInfoText();
+                    UpdateAlwaysDisabledListInfoText();
+                    SyncPackageStatuses();
+                }
             }
-        }
+        });
     }
 
     /* In case session plugin defaults were changed since Init */
