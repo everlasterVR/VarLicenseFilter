@@ -1,6 +1,4 @@
 using everlaster.FlatUI;
-using everlaster.FlatUI.Elements;
-using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
 namespace everlaster

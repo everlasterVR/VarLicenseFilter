@@ -1,6 +1,5 @@
 #define ENV_DEVELOPMENT
 using everlaster.FlatUI;
-using System;
 
 namespace everlaster
 {
@@ -26,25 +25,5 @@ namespace everlaster
             _setupWindow = _setupWindow ?? new SetupWindow(_script);
             activeWindow = _setupWindow;
         });
-
-        void GoToWindow(Action callback)
-        {
-            activeWindow?.Hide();
-            elementsParent = script.UITransform;
-            callback();
-            if(activeWindow == null)
-            {
-                throw new NullReferenceException("GoToWindow: active window is null");
-            }
-
-            activeWindow.Show();
-
-            #if ENV_DEVELOPMENT
-            {
-                ToggleDevSection(true);
-                UpdateDevRectOptions();
-            }
-            #endif
-        }
     }
 }
