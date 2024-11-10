@@ -260,7 +260,7 @@ sealed class VarLicenseFilter : Script
         {
             foreach(var kvp in _packageLicenseCache)
             {
-                _packageLicenseCache[kvp.Key] = kvp.Value;
+                cacheJSON[kvp.Key] = kvp.Value;
             }
         }
 
@@ -539,7 +539,7 @@ sealed class VarLicenseFilter : Script
     static HashSet<string> FindPackageFilenamesFromDefaultSessionPluginsJson()
     {
         var result = new HashSet<string>();
-        var jc = FileUtils.ReadJSON("Custom\\PluginPresets\\Plugins_UserDefaults.vap");
+        var jc = FileUtils.ReadJSON(@"Custom\PluginPresets\Plugins_UserDefaults.vap");
         if(jc != null && jc.HasKey("storables"))
         {
             JSONClass plugins = null;
@@ -980,29 +980,5 @@ sealed class VarLicenseFilter : Script
             logBuilder.Exception(e);
             return null;
         }
-    }
-
-    public void AddTextFieldToJss(UIDynamicTextField textField, JSONStorableString jss)
-    {
-        jss.dynamicText = textField;
-        textFieldToJSONStorableString.Add(textField, jss);
-    }
-
-    public void AddToggleToJsb(UIDynamicToggle toggle, JSONStorableBool jsb)
-    {
-        jsb.toggle = toggle.toggle;
-        toggleToJSONStorableBool.Add(toggle, jsb);
-    }
-
-    public void AddSliderToJsf(UIDynamicSlider slider, JSONStorableFloat jsf)
-    {
-        jsf.slider = slider.slider;
-        sliderToJSONStorableFloat.Add(slider, jsf);
-    }
-
-    public void AddPopupToJssc(UIDynamicPopup uiDynamicPopup, JSONStorableStringChooser jssc)
-    {
-        jssc.popup = uiDynamicPopup.popup;
-        popupToJSONStorableStringChooser.Add(uiDynamicPopup, jssc);
     }
 }

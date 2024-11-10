@@ -173,31 +173,13 @@ namespace everlaster
 
         public static void DeleteTmpEnabledPackagesFile() => FileManagerSecure.DeleteFile(GetTmpEnabledFileFullPath());
 
-        public static JSONClass ReadJSON(string path)
-        {
-            JSONClass jc = null;
-            try
-            {
-                if(FileExists(path))
-                {
-                    jc = JSON.Parse(FileManagerSecure.ReadAllText(path)).AsObject;
-                }
-            }
-            catch(Exception e)
-            {
-                new LogBuilder(nameof(FileUtils)).Debug(e.ToString(), true);
-            }
-
-            return jc;
-        }
-
         static string ReadText(string path) => FileExists(path) ? FileManagerSecure.ReadAllText(path) : "";
 
         static void WriteJSON(JSONClass jc, string path, UserActionCallback confirmCallback = null) =>
             FileManagerSecure.WriteAllText(path, jc.ToString(""), confirmCallback, null, null);
 
         public static bool DisabledFileExists(string packagePath) => FileExists($"{packagePath}.{DISABLED_EXT}");
-        public static void DeleteDisabledFile(string packagePath) => FileManagerSecure.DeleteFile($"{packagePath}.{DISABLED_EXT}");
+        public static void DeleteDisabledFile(string packagePath) => DeleteFile($"{packagePath}.{DISABLED_EXT}");
         public static void CreateDisabledFile(string packagePath) => FileManagerSecure.WriteAllText($"{packagePath}.{DISABLED_EXT}", string.Empty);
     }
 }

@@ -93,9 +93,11 @@
         <Compile Include="src\Models\VarPackage.cs" />
     </ItemGroup>
     <ItemGroup>
+        <Content Include="Common.cslist" />
         <Content Include="Common\scripts\*.sh"/>
         <Content Include=".gitignore" />
         <Content Include="CreateAddonPackagesSymlink.bat" />
+        <Content Include="FlatUI.cslist" />
         <Content Include="meta.json" />
         <Content Include="VarLicenseFilter.cslist" />
     </ItemGroup>
